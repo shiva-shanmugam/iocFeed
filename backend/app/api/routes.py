@@ -3,9 +3,10 @@ from datetime import datetime
 from typing import Literal
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
-from sqlalchemy import and_, func, or_, select, text
+from sqlalchemy import cast, func, or_, select, text
+from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.orm import Session, selectinload
-from app.core.database import get_db
+from app.core.database import SessionLocal, get_db
 from app.models import Indicator, IndicatorFamily, IndicatorSource, IndicatorTag, IngestionLog, IPGeo, MalwareFamily, Relationship, Source, Tag
 from app.services.classifier import classify, refang
 
@@ -79,7 +80,7 @@ def pivot(indicator_id:int,by:Literal["family","asn","subnet24","tag"],db:Sessio
     elif by=="asn":
         geo=db.get(IPGeo,target.value); ids=select(Indicator.id).join(IPGeo,func.host(IPGeo.ip)==Indicator.value).where(IPGeo.asn==geo.asn) if geo else select(Indicator.id).where(False)
     else:
-        try: prefix=str(ipaddress.ip_network(f"{target.value}/24",strict=False)); ids=select(Indicator.id).where(Indicator.type=="ipv4",func.cast(Indicator.value,text("inet")).op("<<=")(prefix))
+        try: prefix=str(ipaddress.ip_network(f"{target.value}/24",strict=False)); ids=select(Indicator.id).where(Indicator.type=="ipv4",cast(Indicator.value,INET).op("<<=")(prefix))
         except ValueError: ids=select(Indicator.id).where(False)
     rows=db.scalars(select(Indicator).where(Indicator.id.in_(ids)).limit(250)).all(); return {"by":by,"items":[dto(x) for x in rows]}
 
@@ -96,7 +97,7 @@ async def bulk(request:Request,file:UploadFile|None=File(None),db:Session=Depend
         try:
             typ,value=classify(raw); row=db.scalar(select(Indicator).where(Indicator.type==typ,Indicator.value==value)); results.append({"input":raw,"status":"found" if row else "unknown","indicator":dto(row) if row else None})
         except ValueError:results.append({"input":raw,"status":"invalid","indicator":None})
-    return {"results":results,"summary":{"checked":len(results),"malicious":sum(x.get("indicator",{}).get("verdict")=="malicious" for x in results),"suspicious":sum(x.get("indicator",{}).get("verdict")=="suspicious" for x in results),"unknown":sum(not x["indicator"] or x["indicator"]["verdict"]=="unknown" for x in results)}}
+    return {"results":results,"summary":{"checked":len(results),"malicious":sum((x.get("indicator") or {}).get("verdict")=="malicious" for x in results),"suspicious":sum((x.get("indicator") or {}).get("verdict")=="suspicious" for x in results),"unknown":sum(not x["indicator"] or x["indicator"]["verdict"]=="unknown" for x in results)}}
 @router.get("/bulk/export")
 def bulk_export(format:Literal["csv","json","blocklist"]="csv",db:Session=Depends(get_db)):
     rows=db.scalars(select(Indicator).where(Indicator.verdict.in_(["malicious","suspicious"])).limit(10000)).all(); data=[dto(x) for x in rows]
@@ -129,7 +130,7 @@ async def log_stream():
     async def events():
         last=0
         while True:
-            with next(get_db()) as db:
+            with SessionLocal() as db:
                 rows=db.scalars(select(IngestionLog).where(IngestionLog.id>last).order_by(IngestionLog.id)).all()
                 for row in rows: last=row.id; yield f"data: {json.dumps({'id':row.id,'ts':row.ts.isoformat(),'source':row.source,'level':row.level,'message':row.message})}\n\n"
             yield ": keepalive\n\n"; await asyncio.sleep(3)

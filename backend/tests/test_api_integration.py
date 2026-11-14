@@ -3,7 +3,7 @@ pytestmark=pytest.mark.skipif(not os.getenv("RUN_DB_TESTS"),reason="requires mig
 def test_health_and_lookup():
     from fastapi.testclient import TestClient
     from app.main import app
-    client=TestClient(app); assert client.get("/api/health").status_code==200; assert client.get("/api/lookup",params={"q":"198.51.0.1"}).status_code in (200,404)
+    client=TestClient(app); assert client.get("/api/health").status_code==200; assert client.get("/api/lookup",params={"q":"10.0.0.1"}).status_code in (200,404)
 def test_graph_limit():
     from fastapi.testclient import TestClient
     from app.main import app

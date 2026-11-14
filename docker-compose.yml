@@ -13,14 +13,19 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ioc} -d ${POSTGRES_DB:-ioc}"]
       interval: 3s
       timeout: 3s
-      retries: 20
+      retries: 60
 
   api:
     build: ./backend
     command: ["/app/entrypoint.sh"]
-    env_file: [.env]
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://ioc:change-me@db:5432/ioc}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN:-http://localhost:5173}
+      ABUSECH_AUTH_KEY: ${ABUSECH_AUTH_KEY:-}
+      MAX_INDICATORS: ${MAX_INDICATORS:-10000}
+      INGEST_INTERVAL_MINUTES: ${INGEST_INTERVAL_MINUTES:-30}
+      MAXMIND_DB_PATH: ${MAXMIND_DB_PATH:-}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-120}
     ports: ["8000:8000"]
     depends_on:
       db: {condition: service_healthy}
@@ -28,14 +33,17 @@ services:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 60
 
   worker:
     build: ./backend
     command: ["python", "-m", "ingest.scheduler"]
-    env_file: [.env]
     environment:
       DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://ioc:change-me@db:5432/ioc}
+      ABUSECH_AUTH_KEY: ${ABUSECH_AUTH_KEY:-}
+      MAX_INDICATORS: ${MAX_INDICATORS:-10000}
+      INGEST_INTERVAL_MINUTES: ${INGEST_INTERVAL_MINUTES:-30}
+      MAXMIND_DB_PATH: ${MAXMIND_DB_PATH:-}
     depends_on:
       api: {condition: service_healthy}
     restart: unless-stopped

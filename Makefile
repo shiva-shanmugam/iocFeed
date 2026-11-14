@@ -6,8 +6,8 @@ seed:
 ingest:
 	docker compose exec api python -m ingest.run --once
 test:
-	docker compose exec api pytest -q
-	docker compose exec frontend npm test -- --run
+	docker compose run --rm api pytest -q
+	docker build --target test frontend
 reset-db:
 	docker compose down -v
 	docker compose up --build
