@@ -1,6 +1,7 @@
 from functools import lru_cache
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://ioc:change-me@db:5432/ioc"
     frontend_origin: str = "http://localhost:5173"
@@ -11,9 +12,10 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 120
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
 
-settings = get_settings()
 
+settings = get_settings()
