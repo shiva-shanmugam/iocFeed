@@ -497,6 +497,19 @@ input[type='range'] {
 .entity-modal > p {
   color: var(--color-text-secondary);
 }
+.entity-crumb {
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.entity-section-note {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  margin: -4px 0 8px;
+}
 .entity-modal dl {
   border-top: 1px solid var(--color-border);
   margin: 16px 0;
@@ -532,6 +545,95 @@ input[type='range'] {
   justify-content: flex-end;
   gap: 8px;
   margin-top: 20px;
+}
+.graph-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 160px 70px;
+  gap: 12px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+  text-align: left;
+}
+.graph-result:hover {
+  background: var(--color-surface);
+}
+.graph-result span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.graph-result span:nth-child(2),
+.graph-result b {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+.graph-result b {
+  text-align: right;
+}
+.graph-help-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.graph-help-list li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.graph-help-list b {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.graph-help-list span {
+  color: var(--color-text-secondary);
+}
+.graph-note {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  margin: 10px 0 0;
+}
+.graph-instructions {
+  position: absolute;
+  z-index: 20;
+  left: 12px;
+  top: 60px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  padding: 5px 8px;
+  font-size: 10px;
+}
+.graph-instructions b {
+  color: var(--color-text);
+  font-weight: 400;
+}
+.graph-instructions span {
+  padding: 0 5px;
+  color: var(--color-text-disabled);
+}
+.graph-empty-note {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  top: 50%;
+  width: 340px;
+  transform: translate(-50%, 90px);
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+  color: var(--color-text);
+  text-align: center;
+  font-size: 11px;
+}
+.graph-empty-note span {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-secondary);
 }
 @media (max-width: 1279px) {
   .explore-grid {

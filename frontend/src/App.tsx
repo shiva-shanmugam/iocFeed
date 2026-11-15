@@ -12,6 +12,9 @@ const GeoTimeline = lazy(() =>
   import('./pages/GeoTimeline').then((x) => ({ default: x.GeoTimeline })),
 );
 const Feeds = lazy(() => import('./pages/Feeds').then((x) => ({ default: x.Feeds })));
+const GraphStart = lazy(() =>
+  import('./pages/GraphStart').then((x) => ({ default: x.GraphStart })),
+);
 export default function App() {
   return (
     <div className="min-h-screen bg-base text-primary">
@@ -22,6 +25,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/search" element={<Home />} />
             <Route path="/investigate/:id" element={<Investigation />} />
+            <Route path="/graph" element={<GraphStart />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/bulk" element={<Bulk />} />
             <Route path="/geo" element={<GeoTimeline />} />

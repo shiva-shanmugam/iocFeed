@@ -10,7 +10,7 @@ export function Nav() {
         <NavLink to="/search" className="block border-l-2 border-transparent px-2 py-1.5">
           Search
         </NavLink>
-        <NavLink to="/investigate/5" className="block border-l-2 border-transparent px-2 py-1.5">
+        <NavLink to="/graph" className="block border-l-2 border-transparent px-2 py-1.5">
           Graph
         </NavLink>
         <NavLink to="/geo" className="block border-l-2 border-transparent px-2 py-1.5">

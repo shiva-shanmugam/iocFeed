@@ -2,7 +2,6 @@ import { DragEvent, useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { API, api } from '../api/client';
 import { DetailDrawer } from '../components/DetailDrawer';
-import type { Indicator } from '../types';
 import { Header } from './Dashboard';
 
 export function Bulk() {
@@ -135,7 +134,7 @@ export function Bulk() {
         </>
       )}
 
-      <DetailDrawer id={drawer} onClose={() => setDrawer(null)} onPivot={(_: Indicator[]) => {}} />
+      <DetailDrawer id={drawer} onClose={() => setDrawer(null)} />
     </main>
   );
 }

@@ -9,10 +9,10 @@ export function useExploreFilters() {
   const query = params.toString();
   const active = FILTER_KEYS.flatMap((key) => params.getAll(key).map((value) => ({ key, value })));
   const update = useCallback(
-    (mutate: (next: URLSearchParams) => void) => {
+    (mutate: (next: URLSearchParams) => void, resetPage = true) => {
       const next = new URLSearchParams(params);
       mutate(next);
-      next.delete('page');
+      if (resetPage) next.delete('page');
       setParams(next, { replace: true });
     },
     [params, setParams],
@@ -34,6 +34,7 @@ export function useExploreFilters() {
         next.delete(key);
         if (value) next.set(key, value);
       }),
+    setPage: (value: number) => update((next) => next.set('page', String(value)), false),
     setDates: (from: string, to: string) =>
       update((next) => {
         next.set('date_from', from);

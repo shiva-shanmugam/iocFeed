@@ -1,6 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api, type EntityData, type ExploreRow, type FacetItem } from '../api/client';
 import { type FilterKey, useExploreFilters } from '../hooks/useExploreFilters';
 
@@ -202,7 +203,7 @@ export function Dashboard() {
           page={page}
           sort={sort}
           order={order}
-          setPage={(v) => filters.setOne('page', String(v))}
+          setPage={filters.setPage}
           setSort={(value) => {
             if (sort === value) setOrder(order === 'asc' ? 'desc' : 'asc');
             else {
@@ -530,6 +531,9 @@ function EntityModal({
       <Dialog.Portal>
         <Dialog.Overlay className="modal-scrim" />
         <Dialog.Content className="entity-modal">
+          <nav className="entity-crumb" aria-label="Entity position">
+            Explore / {kind || 'entity'} / {data?.title ?? value}
+          </nav>
           <div className="modal-top">
             <div>
               <span className="section-label">{kind}</span>
@@ -542,17 +546,25 @@ function EntityModal({
           </Dialog.Description>
           {data && (
             <>
-              <dl>
-                {Object.entries(data.meta).map(([key, item]) => (
-                  <div key={key}>
-                    <dt>{key.replace('_', ' ')}</dt>
-                    <dd>{typeof item === 'object' ? JSON.stringify(item) : String(item)}</dd>
-                  </div>
-                ))}
-              </dl>
+              {Object.keys(data.meta).length > 0 && (
+                <section>
+                  <h3 className="section-label">Context</h3>
+                  <dl>
+                    {Object.entries(data.meta).map(([key, item]) => (
+                      <div key={key}>
+                        <dt>{key.replaceAll('_', ' ')}</dt>
+                        <dd>{typeof item === 'object' ? JSON.stringify(item) : String(item)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
               {data.related.length > 0 && (
                 <section>
-                  <h3 className="section-label">Related</h3>
+                  <h3 className="section-label">Relationships</h3>
+                  <p className="entity-section-note">
+                    Open a related entity without losing the filters behind this drawer.
+                  </p>
                   {data.related.map((item) => (
                     <button
                       className="related-row"
@@ -566,6 +578,11 @@ function EntityModal({
                 </section>
               )}
               <footer>
+                {kind === 'indicator' && (
+                  <Link className="action-primary" to={`/investigate/${value}`}>
+                    open relationship graph
+                  </Link>
+                )}
                 {kind !== 'indicator' && kind !== 'bucket' && (
                   <button className="action-primary" onClick={() => apply(kind, value)}>
                     apply as filter

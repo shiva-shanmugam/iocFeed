@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import ForceGraph2D from 'react-force-graph-2d';
 import { api } from '../api/client';
@@ -31,18 +31,29 @@ export function Investigation() {
   const [types, setTypes] = useState(new Set(nodeTypes));
   const [path, setPath] = useState(new Set<number>());
 
+  useEffect(() => {
+    setExtra({ nodes: [], edges: [], truncated: false });
+    setSelected([rootId]);
+    setPath(new Set());
+    setDrawer(rootId);
+  }, [rootId]);
+
   const merged = useMemo(() => {
     const nodes = new Map<number, Indicator>();
     [...(data?.nodes ?? []), ...extra.nodes].forEach((node) => nodes.set(node.id, node));
     const edges = new Map<number, GraphData['edges'][number]>();
-    [...(data?.edges ?? []), ...extra.edges].forEach((edge) => edges.set(edge.id, edge));
+    [...(data?.edges ?? []), ...extra.edges].forEach((edge) => {
+      const source = typeof edge.source === 'object' ? (edge.source as Indicator).id : edge.source;
+      const target = typeof edge.target === 'object' ? (edge.target as Indicator).id : edge.target;
+      edges.set(edge.id, { ...edge, source, target });
+    });
     const visibleNodes = [...nodes.values()].filter((node) => types.has(node.type)).slice(0, 250);
     const visibleIds = new Set(visibleNodes.map((node) => node.id));
     return {
       nodes: visibleNodes,
-      links: [...edges.values()].filter(
-        (edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target),
-      ),
+      links: [...edges.values()]
+        .filter((edge) => visibleIds.has(edge.source) && visibleIds.has(edge.target))
+        .map((edge) => ({ ...edge })),
     };
   }, [data, extra, types]);
 
@@ -58,12 +69,16 @@ export function Investigation() {
         setPath(new Set());
       }
     }
-    const expanded = await api.expand(node.id);
-    setExtra((current) => ({
-      nodes: [...current.nodes, ...expanded.nodes],
-      edges: [...current.edges, ...expanded.edges],
-      truncated: current.truncated || expanded.truncated,
-    }));
+    try {
+      const expanded = await api.expand(node.id);
+      setExtra((current) => ({
+        nodes: [...current.nodes, ...expanded.nodes],
+        edges: [...current.edges, ...expanded.edges],
+        truncated: current.truncated || expanded.truncated,
+      }));
+    } catch {
+      // Detail remains useful even when a neighbour request fails.
+    }
   }
 
   function paintNode(node: any, context: CanvasRenderingContext2D, scale: number) {
@@ -114,10 +129,24 @@ export function Investigation() {
     setTypes(next);
   }
 
+  function fitGraph() {
+    if (!graphRef.current) return;
+    if (merged.nodes.length <= 1) {
+      const node = merged.nodes[0] as Indicator & { x?: number; y?: number };
+      graphRef.current.centerAt(node?.x ?? 0, node?.y ?? 0, 100);
+      graphRef.current.zoom(4, 100);
+      return;
+    }
+    graphRef.current.zoomToFit(100, 40);
+  }
+
   return (
     <main className="h-[calc(100vh-28px)] relative overflow-hidden">
       <header className="h-12 border-b border-line px-3 flex items-center gap-4">
-        <h1 className="section-label mb-0">relationship graph / {rootId}</h1>
+        <h1 className="section-label mb-0">
+          <Link to="/graph">graph</Link> /{' '}
+          {data?.nodes.find((node) => node.id === rootId)?.value ?? rootId}
+        </h1>
         <div className="h-4 border-l border-line" />
         {nodeTypes.map((type) => (
           <label key={type} className="flex items-center gap-1.5 text-[11px] text-secondary">
@@ -126,7 +155,7 @@ export function Investigation() {
           </label>
         ))}
         <div className="ml-auto flex gap-2">
-          <button className="action" onClick={() => graphRef.current?.zoomToFit(100, 40)}>
+          <button className="action" onClick={fitGraph}>
             fit
           </button>
           <button
@@ -135,6 +164,7 @@ export function Investigation() {
               setExtra({ nodes: [], edges: [], truncated: false });
               setPath(new Set());
               setSelected([rootId]);
+              setDrawer(rootId);
             }}
           >
             reset
@@ -142,9 +172,22 @@ export function Investigation() {
         </div>
       </header>
 
-      <div className="absolute left-3 bottom-3 z-20 text-[11px] text-secondary">
-        {merged.nodes.length}/250 nodes · select two nodes for shortest path
+      <div className="graph-instructions">
+        <b>click node</b> open evidence + load neighbours <span>·</span> <b>click another</b>{' '}
+        shortest path <span>·</span> <b>hover</b> show IOC and edge type
       </div>
+
+      <div className="absolute left-3 bottom-3 z-20 text-[11px] text-secondary">
+        {merged.nodes.length}/250 nodes · {merged.links.length} explicit relationships · selected{' '}
+        {selected.join(' → ')}
+      </div>
+
+      {!isLoading && !error && merged.nodes.length === 1 && merged.links.length === 0 ? (
+        <div className="graph-empty-note">
+          no explicit relationships stored for this IOC
+          <span>Open a family, tag, or source dataset in the evidence drawer to continue by metadata.</span>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <State text="loading graph..." />
@@ -178,16 +221,14 @@ export function Investigation() {
             context.fillText(link.type, x, y);
           }}
           cooldownTicks={60}
+          maxZoom={8}
+          onEngineStop={() => {
+            if (merged.nodes.length === 1) fitGraph();
+          }}
         />
       )}
 
-      <DetailDrawer
-        id={drawer}
-        onClose={() => setDrawer(null)}
-        onPivot={(nodes) =>
-          setExtra((current) => ({ ...current, nodes: [...current.nodes, ...nodes] }))
-        }
-      />
+      <DetailDrawer id={drawer} onClose={() => setDrawer(null)} />
     </main>
   );
 }

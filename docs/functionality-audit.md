@@ -1,0 +1,33 @@
+# Functional audit
+
+Audit date: 2026-11-15. The local Docker application was tested at 1440×900 with Playwright after the graph and entity-drill changes. The machine-readable result is in `frontend/artifacts/functionality/report.json`; screenshots are stored beside it.
+
+## Relationship graph model
+
+The graph is an evidence view, not a similarity visualization. A line appears only when the database contains an explicit relationship between two indicators.
+
+1. `/graph` searches for the IOC that will become the root.
+2. Opening a result loads the root and its stored relationships to depth 2, capped at 250 nodes.
+3. Clicking a node opens its evidence drawer and requests its direct neighbours.
+4. Clicking a second node asks the API for the shortest stored path between the last two selected nodes and highlights it.
+5. Hovering a node shows its IOC; hovering a connected node exposes the relationship type.
+6. Type checkboxes hide or show node types. `fit` reframes the visible graph and `reset` returns to the original root.
+
+An isolated IOC is valid data, not a graph failure. The view now says that no explicit relationships are stored and keeps the node at a readable size. Family, tag, and source links in the drawer are metadata pivots back into Explore; they may include IOCs that share classification but are not directly connected.
+
+## Borrowed interaction ideas
+
+The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-detail flow, persistent context in drawers, and lateral links from a detail record. The visual treatment remains this project's quiet, dense utility system: no hero, decorative map, glow, animation, or card-heavy navigation.
+
+## Checks passed
+
+- Explore: 365-day heat map, entity drill-down, Escape close, URL-backed facets, sorting, page size, and pagination.
+- Search: suggestions and opening the selected IOC as a graph root.
+- Graph: root picker, instruction strip, canvas render, evidence drawer open/close, initial expansion API, neighbour expansion API, and shortest-path API.
+- Bulk: parsing three inputs and verdict filtering.
+- Map/timeline: 992 plotted points, family filter, date-range filter, play, and pause.
+- Feeds: source table and ingestion log.
+- APIs: health, summary, facets, time series, indicator rows, graph, graph expansion, graph path, geo points, timeline, ingestion log, and CSV/JSON/blocklist exports.
+- Browser: no console errors during the complete flow.
+
+The automated audit recorded 36 passing checks and zero failures. Unit tests (4), ESLint, TypeScript, and the production build also pass.

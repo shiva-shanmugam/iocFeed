@@ -1,17 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
-import type { Indicator } from '../types';
+import { Link } from 'react-router-dom';
 
-export function DetailDrawer({
-  id,
-  onClose,
-  onPivot,
-}: {
-  id: number | null;
-  onClose: () => void;
-  onPivot: (nodes: Indicator[]) => void;
-}) {
+export function DetailDrawer({ id, onClose }: { id: number | null; onClose: () => void }) {
   const [tab, setTab] = useState<'intel' | 'raw'>('intel');
   const { data, error, isLoading } = useQuery({
     queryKey: ['detail', id],
@@ -25,10 +17,6 @@ export function DetailDrawer({
       .replace(/^https:/, 'hxxps:')
       .replace(/^http:/, 'hxxp:')
       .replaceAll('.', '[.]');
-
-  async function pivot(by: string) {
-    if (data) onPivot((await api.pivot(data.id, by)).items);
-  }
 
   return (
     <aside className="fixed right-0 top-0 bottom-7 z-40 w-[420px] border-l border-line bg-base overflow-y-auto">
@@ -68,19 +56,19 @@ export function DetailDrawer({
             </div>
           </section>
 
-          <p className="break-all bg-surface p-2 border border-line mt-4">{data.value}</p>
+          <p className="entity-crumb">
+            graph / {data.type} / indicator {data.id}
+          </p>
+          <p className="break-all bg-surface p-2 border border-line mt-2">{data.value}</p>
           <div className="flex gap-2 mt-2">
             <button className="action" onClick={() => navigator.clipboard.writeText(data.value)}>
-              copy raw
+              copy IOC
             </button>
             <button
               className="action"
               onClick={() => navigator.clipboard.writeText(defang(data.value))}
             >
               copy defanged
-            </button>
-            <button className="action" onClick={() => navigator.clipboard.writeText(data.value)}>
-              copy refanged
             </button>
           </div>
 
@@ -130,19 +118,36 @@ export function DetailDrawer({
                 {[...(data.tags ?? []), ...(data.families ?? [])].join(', ') || 'none'}
               </p>
 
-              <Label text="pivot" />
+              <Label text="continue exploring" />
               <div className="grid grid-cols-2 gap-2">
-                {[
-                  ['family', 'same family'],
-                  ['asn', 'same ASN'],
-                  ['subnet24', 'same /24'],
-                  ['tag', 'same tag'],
-                ].map(([key, label]) => (
-                  <button key={key} className="action" onClick={() => pivot(key)}>
-                    {label}
-                  </button>
-                ))}
+                {data.families?.[0] && (
+                  <Link className="action" to={`/?family=${encodeURIComponent(data.families[0])}`}>
+                    family dataset
+                  </Link>
+                )}
+                {data.tags?.[0] && (
+                  <Link className="action" to={`/?tag=${encodeURIComponent(data.tags[0])}`}>
+                    tag dataset
+                  </Link>
+                )}
+                {data.sources?.[0] && (
+                  <Link
+                    className="action"
+                    to={`/?source=${encodeURIComponent(data.sources[0].name)}`}
+                  >
+                    source dataset
+                  </Link>
+                )}
+                {data.type === 'ipv4' && (
+                  <Link className="action" to="/geo">
+                    open on map
+                  </Link>
+                )}
               </div>
+              <p className="graph-note mt-3">
+                Clicking the node itself expands only explicit database relationships. These dataset
+                links pivot by shared metadata and may contain IOCs that are not directly connected.
+              </p>
             </>
           )}
         </div>
