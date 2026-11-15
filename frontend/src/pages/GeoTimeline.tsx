@@ -1,8 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Globe from 'react-globe.gl';
+import { geoEquirectangular, geoPath } from 'd3-geo';
+import { feature } from 'topojson-client';
+import type { FeatureCollection } from 'geojson';
+import worldData from 'world-atlas/countries-110m.json';
 import { api } from '../api/client';
 import { Header, Panel } from './Dashboard';
+
 interface GeoPoint {
   id: number;
   value: string;
@@ -15,8 +19,23 @@ interface GeoPoint {
   first_seen: string;
   synthetic: boolean;
 }
+
+const mapWidth = 960;
+const mapHeight = 480;
+const world = feature(
+  worldData as any,
+  (worldData as any).objects.countries,
+) as unknown as FeatureCollection;
+const projection = geoEquirectangular().fitExtent(
+  [
+    [8, 8],
+    [mapWidth - 8, mapHeight - 8],
+  ],
+  world,
+);
+const path = geoPath(projection);
+
 export function GeoTimeline() {
-  const globe = useRef<any>();
   const [family, setFamily] = useState('');
   const [frame, setFrame] = useState(100);
   const [playing, setPlaying] = useState(false);
@@ -26,157 +45,179 @@ export function GeoTimeline() {
     queryKey: ['timeline', family],
     queryFn: () => api.timeline(family),
   });
+
   useEffect(() => {
     if (!playing) return;
-    const timer = setInterval(() => setFrame((v) => (v >= 100 ? 0 : v + 1)), 120);
-    return () => clearInterval(timer);
+    const timer = window.setInterval(
+      () => setFrame((value) => (value >= 100 ? 0 : value + 1)),
+      160,
+    );
+    return () => window.clearInterval(timer);
   }, [playing]);
-  useEffect(() => {
-    globe.current?.pointOfView({ lat: 20, lng: 20, altitude: 2.1 }, 800);
-  }, [geo.data]);
+
   const maxDate = useMemo(() => {
     const sorted = [...(timeline.data ?? [])].sort(
       (a, b) => +new Date(a.first_seen) - +new Date(b.first_seen),
     );
     return sorted[Math.max(0, Math.floor(((sorted.length - 1) * frame) / 100))]?.first_seen;
   }, [timeline.data, frame]);
+
   const allowed = useMemo(
     () =>
       new Set(
-        (timeline.data ?? []).filter((x) => !maxDate || x.first_seen <= maxDate).map((x) => x.id),
+        (timeline.data ?? [])
+          .filter((item) => !maxDate || item.first_seen <= maxDate)
+          .map((item) => item.id),
       ),
     [timeline.data, maxDate],
   );
-  const points = (geo.data ?? ([] as GeoPoint[])).filter((x) => allowed.has(x.id));
-  const arcs = points
-    .filter((x) => x.verdict === 'malicious')
-    .slice(0, 250)
-    .map((x) => ({
-      startLat: x.lat,
-      startLng: x.lon,
-      endLat: 20.59,
-      endLng: 78.96,
-      color: ['#ff2e88', '#21d4fd'],
-    }));
-  const countries = rank(points, (x) => x.country);
-  const asns = rank(points, (x) => `AS${x.asn} ${x.as_name}`);
-  if (geo.isLoading) return <State text="Initializing globe telemetry…" />;
-  if (geo.error) return <State text="Geo data unavailable." />;
+  const points = (geo.data ?? ([] as GeoPoint[])).filter((item) => allowed.has(item.id));
+  const countries = rank(points, (item) => item.country);
+  const asns = rank(points, (item) => `AS${item.asn} ${item.as_name}`);
+
+  if (geo.isLoading) return <State text="loading geo data..." />;
+  if (geo.error) return <State text="geo data unavailable" />;
+
   return (
-    <main className="p-6 pb-14 max-w-[1600px] mx-auto">
+    <main className="p-4 max-w-[1480px]">
       <Header
-        title="GEO + TIMELINE"
-        subtitle={`${points.length} ACTIVE IP SIGNALS // ${maxDate ? new Date(maxDate).toLocaleDateString() : '—'}`}
+        title="geo / timeline"
+        subtitle={`${points.length} active IPs · ${maxDate ? new Date(maxDate).toLocaleDateString() : '—'}`}
       />
-      <div className="grid grid-cols-12 gap-4">
-        <Panel
-          title="GLOBAL IOC TELEMETRY"
-          className="col-span-9 h-[620px] relative overflow-hidden"
-        >
-          <Globe
-            ref={globe}
-            width={1050}
-            height={560}
-            backgroundColor="#101720"
-            showAtmosphere
-            atmosphereColor="#21d4fd"
-            pointsData={points}
-            pointLat="lat"
-            pointLng="lon"
-            pointAltitude={0.02}
-            pointRadius={(x) => ((x as GeoPoint).verdict === 'malicious' ? 0.45 : 0.25)}
-            pointColor={(x) => ((x as GeoPoint).verdict === 'malicious' ? '#ff2e88' : '#ffb020')}
-            pointLabel={(x) => {
-              const p = x as GeoPoint;
-              return `<b>${p.value}</b><br/>${p.country} · AS${p.asn}<br/>${p.verdict}`;
-            }}
-            arcsData={arcs}
-            arcColor="color"
-            arcDashLength={0.3}
-            arcDashGap={1}
-            arcDashAnimateTime={1800}
-            arcStroke={0.25}
-          />
-          {points.some((x) => x.synthetic) && (
-            <span className="absolute bottom-2 left-2 text-[10px] border border-amber/40 text-amber px-2 py-1 bg-void/80">
-              SYNTHETIC GEO DATA
-            </span>
+      <div className="grid grid-cols-12 gap-3">
+        <Panel title="global IOC distribution" className="col-span-9">
+          <svg
+            viewBox={`0 0 ${mapWidth} ${mapHeight}`}
+            className="w-full h-[500px] bg-base border border-line"
+            role="img"
+            aria-label="Equirectangular map of indicator locations"
+          >
+            <g
+              fill="none"
+              stroke="var(--color-bar)"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            >
+              {world.features.map((country, index) => (
+                <path key={index} d={path(country) ?? ''} />
+              ))}
+            </g>
+            <g>
+              {points.map((point) => {
+                const position = projection([point.lon, point.lat]);
+                if (!position) return null;
+                return (
+                  <circle
+                    key={point.id}
+                    cx={position[0]}
+                    cy={position[1]}
+                    r="3"
+                    fill={
+                      point.verdict === 'malicious'
+                        ? 'var(--color-malicious)'
+                        : point.verdict === 'suspicious'
+                          ? 'var(--color-suspicious)'
+                          : 'var(--color-text-secondary)'
+                    }
+                  >
+                    <title>{`${point.value} · ${point.country} · AS${point.asn}`}</title>
+                  </circle>
+                );
+              })}
+            </g>
+          </svg>
+          {points.some((point) => point.synthetic) && (
+            <p className="m-0 mt-2 text-[11px] text-secondary">synthetic geo data</p>
           )}
         </Panel>
-        <div className="col-span-3 space-y-4">
-          <Leaderboard title="TOP COUNTRIES" data={countries} />
-          <Leaderboard title="TOP ASNs" data={asns} />
+
+        <div className="col-span-3 space-y-3">
+          <Leaderboard title="top countries" data={countries} />
+          <Leaderboard title="top ASNs" data={asns} />
         </div>
-        <Panel title="TIMELINE PLAYBACK" className="col-span-12">
-          <div className="flex gap-4 items-center">
-            <button className="action w-20" onClick={() => setPlaying(!playing)}>
-              {playing ? 'PAUSE' : 'PLAY'}
+
+        <Panel title="timeline" className="col-span-12">
+          <div className="grid grid-cols-[64px_1fr_180px_56px] gap-3 items-center">
+            <button className="action" onClick={() => setPlaying(!playing)}>
+              {playing ? 'pause' : 'play'}
             </button>
-            <input
-              aria-label="Timeline position"
-              type="range"
-              min="0"
-              max="100"
-              value={frame}
-              onChange={(e) => setFrame(Number(e.target.value))}
-              className="flex-1 accent-cyan"
-            />
+            <div>
+              <input
+                aria-label="Timeline position"
+                type="range"
+                min="0"
+                max="100"
+                value={frame}
+                onChange={(event) => setFrame(Number(event.target.value))}
+                className="w-full block"
+              />
+              <div className="h-3 border-t border-line flex justify-between mt-1">
+                {[0, 25, 50, 75, 100].map((tick) => (
+                  <span key={tick} className="h-2 border-l border-line" />
+                ))}
+              </div>
+            </div>
             <select
               value={family}
-              onChange={(e) => {
-                setFamily(e.target.value);
+              onChange={(event) => {
+                setFamily(event.target.value);
                 setFrame(0);
               }}
-              className="bg-void border border-slate-700 p-2 text-xs"
+              className="field py-1"
             >
-              <option value="">ALL FAMILIES</option>
-              {families.data?.map((x) => (
-                <option key={x.name}>{x.name}</option>
+              <option value="">all families</option>
+              {families.data?.map((item) => (
+                <option key={item.name}>{item.name}</option>
               ))}
             </select>
-            <span className="font-mono text-xs w-24">{frame}%</span>
+            <span className="text-right text-secondary">{frame}%</span>
           </div>
         </Panel>
       </div>
     </main>
   );
 }
-function rank<T>(items: T[], key: (x: T) => string) {
+
+function rank<T>(items: T[], key: (item: T) => string) {
   const counts = new Map<string, number>();
-  items.forEach((x) => counts.set(key(x), (counts.get(key(x)) ?? 0) + 1));
+  items.forEach((item) => counts.set(key(item), (counts.get(key(item)) ?? 0) + 1));
   return [...counts]
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
-    .slice(0, 8);
+    .slice(0, 10);
 }
+
 function Leaderboard({ title, data }: { title: string; data: { name: string; count: number }[] }) {
-  const max = Math.max(1, ...data.map((x) => x.count));
   return (
     <Panel title={title}>
-      <div className="space-y-3 h-[265px] overflow-auto">
-        {data.length ? (
-          data.map((x, i) => (
-            <div key={x.name}>
-              <div className="flex justify-between text-[10px]">
-                <span>
-                  {i + 1}. {x.name}
-                </span>
-                <b className="text-cyan">{x.count}</b>
-              </div>
-              <div className="h-1 bg-slate-800 mt-1">
-                <div className="h-full bg-cyan" style={{ width: `${(x.count / max) * 100}%` }} />
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-xs text-slate-600">No points at this time.</p>
-        )}
-      </div>
+      <table className="w-full text-[11px]">
+        <thead>
+          <tr>
+            <th className="text-left">name</th>
+            <th className="text-right">count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.length ? (
+            data.map((item) => (
+              <tr key={item.name}>
+                <td className="max-w-40 truncate">{item.name}</td>
+                <td className="text-right">{item.count}</td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={2} className="text-secondary">
+                no points
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
     </Panel>
   );
 }
+
 function State({ text }: { text: string }) {
-  return (
-    <main className="h-[calc(100vh-6rem)] grid place-items-center text-slate-500">{text}</main>
-  );
+  return <main className="p-4 text-secondary">{text}</main>;
 }

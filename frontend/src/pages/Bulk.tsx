@@ -4,6 +4,7 @@ import { API, api } from '../api/client';
 import { DetailDrawer } from '../components/DetailDrawer';
 import type { Indicator } from '../types';
 import { Header } from './Dashboard';
+
 export function Bulk() {
   const [text, setText] = useState('');
   const [filter, setFilter] = useState('all');
@@ -12,127 +13,119 @@ export function Bulk() {
   const rows = useMemo(
     () =>
       mutation.data?.results?.filter(
-        (r: any) => filter === 'all' || (r.indicator?.verdict ?? r.status) === filter,
+        (row: any) => filter === 'all' || (row.indicator?.verdict ?? row.status) === filter,
       ) ?? [],
     [mutation.data, filter],
   );
+
   function run(content = text) {
     const values = content
       .split(/[\n,;]/)
-      .map((x) => x.trim())
+      .map((value) => value.trim())
       .filter(Boolean);
     if (values.length) mutation.mutate(values);
   }
-  function drop(e: DragEvent) {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
+
+  function drop(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
     if (file)
-      file.text().then((v) => {
-        setText(v);
-        run(v);
+      file.text().then((value) => {
+        setText(value);
+        run(value);
       });
   }
+
   return (
-    <main className="p-6 pb-14 max-w-[1500px] mx-auto">
-      <Header title="BULK TRIAGE MATRIX" subtitle="LOCAL BATCH ANALYSIS // MAX 5,000" />
-      <div
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={drop}
-        className="border border-dashed border-cyan/40 bg-cyan/[.03] p-5"
-      >
+    <main className="p-4 max-w-[1400px]">
+      <Header title="bulk triage" subtitle="local batch analysis · maximum 5,000 rows" />
+      <section className="panel" onDragOver={(event) => event.preventDefault()} onDrop={drop}>
+        <label htmlFor="bulk-input" className="section-label block">
+          input / CSV or text
+        </label>
         <textarea
+          id="bulk-input"
           value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Paste one IOC per line, or drop a CSV/txt file here…"
-          className="w-full h-28 bg-transparent outline-none resize-none font-mono text-sm"
+          onChange={(event) => setText(event.target.value)}
+          placeholder="one indicator per line"
+          className="field w-full h-28 resize-none rounded-none"
         />
-        <div className="flex justify-between">
-          <span className="text-xs text-slate-500">DROP FILE // CSV, TXT</span>
-          <button
-            onClick={() => run()}
-            disabled={mutation.isPending}
-            className="bg-cyan text-void font-bold text-xs px-5 py-2 disabled:opacity-40"
-          >
-            {mutation.isPending ? 'SCANNING…' : 'RUN TRIAGE'}
+        <div className="flex justify-between items-center mt-2">
+          <span className="text-[11px] text-secondary">paste values or drop a file</span>
+          <button onClick={() => run()} disabled={mutation.isPending} className="action-primary">
+            {mutation.isPending ? 'running...' : 'run triage'}
           </button>
         </div>
-      </div>
+      </section>
+
       {mutation.error && (
-        <p className="text-magenta my-4">Bulk request failed. Check the API connection.</p>
+        <p className="verdict-malicious my-3">bulk request failed; check API connection</p>
       )}
+
       {mutation.data && (
         <>
-          <div className="grid grid-cols-4 border border-slate-800 my-4">
-            {Object.entries(mutation.data.summary).map(([k, v]) => (
+          <div className="my-3 border-y border-line py-2 flex items-center gap-6 text-[11px]">
+            {Object.entries(mutation.data.summary).map(([key, value]) => (
               <button
-                key={k}
-                onClick={() => setFilter(k === 'checked' ? 'all' : k)}
-                className="p-4 border-r border-slate-800 last:border-0 text-left"
+                key={key}
+                onClick={() => setFilter(key === 'checked' ? 'all' : key)}
+                className={`border-0 bg-transparent p-0 rounded-none ${filter === key || (key === 'checked' && filter === 'all') ? 'text-primary' : 'text-secondary'}`}
               >
-                <b
+                <span
                   className={
-                    k === 'malicious'
-                      ? 'text-magenta'
-                      : k === 'suspicious'
-                        ? 'text-amber'
-                        : 'text-cyan'
+                    key === 'malicious'
+                      ? 'verdict-malicious'
+                      : key === 'suspicious'
+                        ? 'verdict-suspicious'
+                        : ''
                   }
                 >
-                  {String(v)}
-                </b>
-                <p className="text-[10px] tracking-widest uppercase text-slate-500">{k}</p>
+                  {String(value)}
+                </span>{' '}
+                {key}
               </button>
             ))}
+            <div className="ml-auto flex gap-2">
+              {['csv', 'json', 'blocklist'].map((format) => (
+                <a key={format} href={`${API}/api/bulk/export?format=${format}`} className="action">
+                  export {format}
+                </a>
+              ))}
+            </div>
           </div>
-          <div className="flex justify-end gap-2 mb-3">
-            {['csv', 'json', 'blocklist'].map((x) => (
-              <a key={x} href={`${API}/api/bulk/export?format=${x}`} className="action">
-                EXPORT {x.toUpperCase()}
-              </a>
-            ))}
-          </div>
-          <div className="border border-slate-800 overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-900 text-slate-500 tracking-widest">
+
+          <div className="border border-line overflow-hidden rounded-none">
+            <table className="w-full text-left text-[11px]">
+              <thead className="bg-base">
                 <tr>
-                  <th className="p-3">INPUT</th>
-                  <th>TYPE</th>
-                  <th>VERDICT</th>
-                  <th>CONFIDENCE</th>
-                  <th>STATUS</th>
+                  <th>input</th>
+                  <th>type</th>
+                  <th>verdict</th>
+                  <th className="text-right">confidence</th>
+                  <th>status</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length ? (
-                  rows.map((r: any, i: number) => (
+                  rows.map((row: any, index: number) => (
                     <tr
-                      key={`${r.input}-${i}`}
-                      onClick={() => r.indicator && setDrawer(r.indicator.id)}
-                      className="border-t border-slate-800 hover:bg-cyan/5 cursor-pointer"
+                      key={`${row.input}-${index}`}
+                      onClick={() => row.indicator && setDrawer(row.indicator.id)}
+                      className="cursor-pointer"
                     >
-                      <td className="p-3 font-mono max-w-xl truncate">{r.input}</td>
-                      <td>{r.indicator?.type ?? '—'}</td>
-                      <td
-                        className={
-                          r.indicator?.verdict === 'malicious'
-                            ? 'text-magenta'
-                            : r.indicator?.verdict === 'suspicious'
-                              ? 'text-amber'
-                              : 'text-slate-500'
-                        }
-                      >
-                        {r.indicator?.verdict ?? 'unknown'}
+                      <td className="max-w-xl truncate">{row.input}</td>
+                      <td className="text-secondary">{row.indicator?.type ?? '—'}</td>
+                      <td className={`verdict-${row.indicator?.verdict ?? 'unknown'}`}>
+                        {row.indicator?.verdict ?? 'unknown'}
                       </td>
-                      <td>{r.indicator?.confidence ?? '—'}</td>
-                      <td>
-                        <span className="border border-slate-700 px-2 py-1">{r.status}</span>
-                      </td>
+                      <td className="text-right">{row.indicator?.confidence ?? '—'}</td>
+                      <td className="text-secondary">{row.status}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="p-10 text-center text-slate-500">
-                      No rows match this filter.
+                    <td colSpan={5} className="text-secondary">
+                      no rows match this filter
                     </td>
                   </tr>
                 )}
@@ -141,6 +134,7 @@ export function Bulk() {
           </div>
         </>
       )}
+
       <DetailDrawer id={drawer} onClose={() => setDrawer(null)} onPivot={(_: Indicator[]) => {}} />
     </main>
   );

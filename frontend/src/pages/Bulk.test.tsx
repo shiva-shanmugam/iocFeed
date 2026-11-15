@@ -8,6 +8,6 @@ test('bulk triage has paste area and action', () => {
       <Bulk />
     </QueryClientProvider>,
   );
-  expect(screen.getByPlaceholderText(/Paste one IOC/)).toBeInTheDocument();
-  expect(screen.getByText('RUN TRIAGE')).toBeInTheDocument();
+  expect(screen.getByPlaceholderText(/one indicator/)).toBeInTheDocument();
+  expect(screen.getByText('run triage')).toBeInTheDocument();
 });

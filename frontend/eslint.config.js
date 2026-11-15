@@ -7,6 +7,12 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: { ...globals.node, document: 'readonly', getComputedStyle: 'readonly' },
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser, parserOptions: { ecmaFeatures: { jsx: true } } },
     plugins: { 'react-hooks': reactHooks },

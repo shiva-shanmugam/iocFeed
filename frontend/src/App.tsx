@@ -13,24 +13,20 @@ const GeoTimeline = lazy(() =>
 );
 export default function App() {
   return (
-    <>
+    <div className="min-h-screen bg-base text-primary">
       <Nav />
-      <Suspense
-        fallback={
-          <main className="h-[calc(100vh-6rem)] grid place-items-center text-slate-500">
-            Loading module…
-          </main>
-        }
-      >
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/investigate/:id" element={<Investigation />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/bulk" element={<Bulk />} />
-          <Route path="/geo" element={<GeoTimeline />} />
-        </Routes>
-      </Suspense>
+      <div className="ml-[184px] pb-7 min-h-screen">
+        <Suspense fallback={<main className="p-4 text-secondary">loading module...</main>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/investigate/:id" element={<Investigation />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/bulk" element={<Bulk />} />
+            <Route path="/geo" element={<GeoTimeline />} />
+          </Routes>
+        </Suspense>
+      </div>
       <StatusBar />
-    </>
+    </div>
   );
 }

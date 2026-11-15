@@ -10,15 +10,10 @@ export function StatusBar() {
     ? Math.max(0, Math.floor((Date.now() - new Date(data.last_sync).getTime()) / 60000))
     : '—';
   return (
-    <footer className="fixed bottom-0 inset-x-0 z-50 h-8 border-t border-cyan/30 bg-void/95 px-4 flex items-center justify-between text-[11px] tracking-widest text-slate-400">
+    <footer className="fixed bottom-0 inset-x-0 z-50 h-7 border-t border-line bg-base px-3 flex items-center text-[11px] text-secondary">
       <span>
-        <b className="text-cyan">FEEDS:</b> {data?.online_feeds ?? '—'} ONLINE
-      </span>
-      <span>
-        <b className="text-cyan">INDICATORS:</b> {data?.total?.toLocaleString() ?? '—'}
-      </span>
-      <span>
-        <b className="text-cyan">LAST SYNC:</b> {mins}M AGO
+        feeds {data?.online_feeds ?? '—'} online&nbsp;&nbsp;|&nbsp;&nbsp;indicators{' '}
+        {data?.total?.toLocaleString() ?? '—'}&nbsp;&nbsp;|&nbsp;&nbsp;last sync {mins}m ago
       </span>
     </footer>
   );
