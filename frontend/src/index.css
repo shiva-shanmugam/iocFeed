@@ -280,60 +280,37 @@ input[type='range'] {
   color: var(--color-text);
   padding: 2px 4px;
 }
-.timeseries-svg {
+.heatmap-svg {
   display: block;
   width: 100%;
-  height: 230px;
+  height: 180px;
   overflow: visible;
+  margin: 8px 0;
 }
-.timeseries-svg line {
-  stroke: var(--color-border);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-.timeseries-svg .baseline {
-  stroke: var(--color-text-secondary);
-}
-.timeseries-svg text {
+.heatmap-svg text {
   fill: var(--color-text-secondary);
-  font-size: 9px;
+  font-size: 8px;
 }
-.timeseries-svg path {
+.heatmap-svg rect {
   vector-effect: non-scaling-stroke;
+  cursor: pointer;
 }
-.chart-legend {
+.heatmap-legend {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: flex-end;
+  gap: 4px;
   color: var(--color-text-secondary);
   font-size: 10px;
   min-height: 18px;
 }
-.chart-legend span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.heatmap-legend i {
+  width: 11px;
+  height: 11px;
+  border: 1px solid var(--color-border);
 }
-.chart-legend i {
-  width: 10px;
-  height: 2px;
-}
-.chart-legend small {
-  margin-left: auto;
-}
-.series-brush {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  align-items: center;
-  gap: 8px;
-  border-top: 1px solid var(--color-border);
-  padding-top: 6px;
-  color: var(--color-text-secondary);
-  font-size: 10px;
-}
-.series-brush input {
-  width: 100%;
-  height: 12px;
+.heatmap-legend small {
+  margin-left: 12px;
 }
 .facet-list {
   min-height: 234px;

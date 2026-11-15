@@ -7,9 +7,7 @@ export type FilterKey = (typeof FILTER_KEYS)[number];
 export function useExploreFilters() {
   const [params, setParams] = useSearchParams();
   const query = params.toString();
-  const active = FILTER_KEYS.flatMap((key) =>
-    params.getAll(key).map((value) => ({ key, value })),
-  );
+  const active = FILTER_KEYS.flatMap((key) => params.getAll(key).map((value) => ({ key, value })));
   const update = useCallback(
     (mutate: (next: URLSearchParams) => void) => {
       const next = new URLSearchParams(params);
@@ -40,6 +38,12 @@ export function useExploreFilters() {
       update((next) => {
         next.set('date_from', from);
         next.set('date_to', to);
+      }),
+    openDate: (value: string) =>
+      update((next) => {
+        next.set('date_from', value);
+        next.set('date_to', value);
+        next.set('modal', `bucket:${value}`);
       }),
     applyFilter: (key: FilterKey, value: string) =>
       update((next) => {

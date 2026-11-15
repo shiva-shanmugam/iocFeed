@@ -40,7 +40,7 @@ Audit date: 2026-11-15. The running seeded application was inspected with Playwr
 ## Decisions for the rebuild
 
 - `/` becomes Explore. Lookup moves to `/search`; existing lookup behavior remains available.
-- The old heatmap and ingestion-log dashboard widget are removed. Feeds and logs move to a dedicated Feeds page.
+- The old fixed 18-column heatmap and ingestion-log dashboard widget are removed. Feeds and logs move to a dedicated Feeds page. The replacement activity view uses a calendar-aligned GitHub-style heat map with dated tooltips and clickable cells.
 - The simplest performant implementation for 10k rows is PostgreSQL-filtered row selection plus cached in-process aggregation for facets and entity payloads. Identical explore requests are cached for 30 seconds.
 - Actor attribution comes from a committed, trimmed ATT&CK-style reference file. If it cannot be loaded, the seed creates synthetic mappings and marks their provenance.
-- The time-series brush uses a responsive SVG with paired native range controls instead of a chart library so the date filter can be set without bringing back a large dependency.
+- The activity heat map uses a responsive SVG and the global date fields handle range filtering without bringing back a large chart dependency.

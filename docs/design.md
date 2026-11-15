@@ -36,7 +36,7 @@ JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Sec
 
 - Graph nodes are neutral flat shapes. Type is conveyed by shape, malicious by a red outline, and selection by the accent outline. No particles, glow, pulse, or persistent labels.
 - Explorer dimensions use sorted neutral bar tables, and every row is both filterable and inspectable.
-- Time activity uses a flat stacked series with hairline grid rules and no chart animation.
+- Time activity uses a GitHub-style seven-row heat map. Cells use four grey intensity steps, with the accent reserved for the highest bucket.
 - Geo uses a flat equirectangular SVG with unfilled country outlines and 3px semantic dots.
 - Timeline is a native range input over a 1px ticked baseline.
 

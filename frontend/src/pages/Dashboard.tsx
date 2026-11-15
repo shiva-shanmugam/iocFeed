@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import { api, type EntityData, type ExploreRow, type FacetItem } from '../api/client';
 import { type FilterKey, useExploreFilters } from '../hooks/useExploreFilters';
 
-const palette = ['#7aa2f7', '#8a8a8e', '#606064', '#444448', '#303033', '#55555a'];
-
 function useCountUp(value = 0) {
   const [shown, setShown] = useState(value);
   const previous = useRef(value);
@@ -29,8 +27,6 @@ function useCountUp(value = 0) {
 export function Dashboard() {
   const filters = useExploreFilters();
   const [contains, setContains] = useState(filters.params.get('contains') ?? '');
-  const [bucket, setBucket] = useState('day');
-  const [group, setGroup] = useState('type');
   const [basis, setBasis] = useState('first_seen');
   const [sort, setSort] = useState('last_seen');
   const [order, setOrder] = useState('desc');
@@ -58,8 +54,8 @@ export function Dashboard() {
     placeholderData: keepPreviousData,
   });
   const series = useQuery({
-    queryKey: ['explore-series', apiQuery, bucket, group, basis],
-    queryFn: () => api.exploreTimeseries(apiQuery, bucket, group, basis),
+    queryKey: ['explore-series', apiQuery, basis],
+    queryFn: () => api.exploreTimeseries(apiQuery, 'day', 'none', basis),
     placeholderData: keepPreviousData,
   });
   const rows = useQuery({
@@ -140,16 +136,11 @@ export function Dashboard() {
         )}
       </section>
       <div className="explore-grid">
-        <TimeSeries
+        <HeatMap
           data={series.data?.items ?? []}
-          bucket={bucket}
-          group={group}
           basis={basis}
-          setBucket={setBucket}
-          setGroup={setGroup}
           setBasis={setBasis}
-          setDate={filters.setDates}
-          open={open}
+          openDate={filters.openDate}
         />
         <FacetPanel
           title="Indicator types"
@@ -322,65 +313,57 @@ function MiniFacet({
   );
 }
 
-function TimeSeries({
-  data,
-  bucket,
-  group,
-  basis,
-  setBucket,
-  setGroup,
-  setBasis,
-  setDate,
-  open,
-}: any) {
-  const [rangeStart, setRangeStart] = useState(0);
-  const [rangeEnd, setRangeEnd] = useState(Math.max(0, data.length - 1));
-  useEffect(() => setRangeEnd(Math.max(0, data.length - 1)), [data.length]);
-  const width = 1000,
-    height = 230,
-    left = 42,
-    bottom = 28;
-  const keys = [...new Set<string>(data.flatMap((item: any) => Object.keys(item.series)))].slice(
-    0,
-    6,
-  );
-  const max = Math.max(1, ...data.map((item: any) => item.total));
-  const x = (index: number) => left + index * ((width - left - 12) / Math.max(1, data.length - 1));
-  const y = (value: number) => height - bottom - (value / max) * (height - bottom - 12);
-  const cumulative: number[] = data.map(() => 0);
-  const bands = keys.map((key) => {
-    const lower = [...cumulative];
-    const upper = data.map((item: any, index: number) => {
-      cumulative[index] += item.series[key] ?? 0;
-      return cumulative[index];
-    });
-    return { key, lower, upper };
+function HeatMap({ data, basis, setBasis, openDate }: any) {
+  const cell = 13;
+  const gap = 3;
+  const left = 34;
+  const top = 24;
+  const counts = new Map<string, number>(data.map((item: any) => [item.date, Number(item.total)]));
+  const end = data.length ? new Date(`${data.at(-1).date}T00:00:00Z`) : new Date();
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - 364);
+  const dates: Date[] = Array.from({ length: 365 }, (_, index) => {
+    const date = new Date(start);
+    date.setUTCDate(start.getUTCDate() + index);
+    return date;
   });
+  const firstOffset = dates[0].getUTCDay();
+  const positions = dates.map((date: Date, index: number) => {
+    const slot = index + firstOffset;
+    return { row: date.getUTCDay(), column: Math.floor(slot / 7) };
+  });
+  const columns = Math.max(1, ...positions.map((position: any) => position.column + 1));
+  const width = left + columns * (cell + gap) + 8;
+  const height = top + 7 * (cell + gap) + 20;
+  const max = Math.max(1, ...data.map((item: any) => item.total));
+  const colors = [
+    'var(--color-heat-0)',
+    'var(--color-heat-1)',
+    'var(--color-heat-2)',
+    'var(--color-heat-3)',
+    'var(--color-heat-4)',
+  ];
+  const color = (value: number) =>
+    colors[value === max ? 4 : Math.min(3, Math.ceil((value / max) * 4))];
+  const months = dates.reduce<{ key: string; label: string; column: number }[]>(
+    (items, date, index) => {
+      const label = date.toLocaleString('en', { month: 'short', timeZone: 'UTC' });
+      const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
+      const column = positions[index]?.column ?? 0;
+      if (!items.some((item) => item.key === key)) items.push({ key, label, column });
+      return items;
+    },
+    [],
+  );
+
   return (
     <section className="panel timeseries-panel">
       <div className="panel-heading">
-        <h2 className="section-label">Indicator volume</h2>
+        <h2 className="section-label">Indicator activity</h2>
         <div className="chart-controls">
           <label>
-            bucket{' '}
-            <select value={bucket} onChange={(e) => setBucket(e.target.value)}>
-              <option>day</option>
-              <option>week</option>
-              <option>month</option>
-            </select>
-          </label>
-          <label>
-            group{' '}
-            <select value={group} onChange={(e) => setGroup(e.target.value)}>
-              <option>type</option>
-              <option>source</option>
-              <option>family</option>
-              <option>none</option>
-            </select>
-          </label>
-          <label>
             basis{' '}
-            <select value={basis} onChange={(e) => setBasis(e.target.value)}>
+            <select value={basis} onChange={(event) => setBasis(event.target.value)}>
               <option value="first_seen">first seen</option>
               <option value="last_seen">last seen</option>
             </select>
@@ -390,100 +373,55 @@ function TimeSeries({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label="Indicator volume over time"
-        className="timeseries-svg"
+        aria-label="Indicator activity heat map"
+        className="heatmap-svg"
       >
-        {[0, 0.25, 0.5, 0.75, 1].map((v) => (
-          <g key={v}>
-            <line x1={left} x2={width - 8} y1={y(max * v)} y2={y(max * v)} />
-            <text x={left - 6} y={y(max * v) + 3}>
-              {Math.round(max * v)}
-            </text>
-          </g>
+        {months.map((month) => (
+          <text key={month.key} x={left + month.column * (cell + gap)} y="12">
+            {month.label}
+          </text>
         ))}
-        {bands.map((band, keyIndex) => {
-          const top = band.upper
-            .map((value: number, index: number) => `${index ? 'L' : 'M'}${x(index)},${y(value)}`)
-            .join('');
-          const bottomPath = band.lower
-            .map((value: number, index: number) => `L${x(index)},${y(value)}`)
-            .reverse()
-            .join('');
+        {[
+          [1, 'Mon'],
+          [3, 'Wed'],
+          [5, 'Fri'],
+        ].map(([row, label]) => (
+          <text key={label} x="0" y={top + Number(row) * (cell + gap) + 10}>
+            {label}
+          </text>
+        ))}
+        {dates.map((date: Date, index: number) => {
+          const dateValue = date.toISOString().slice(0, 10);
+          const total = counts.get(dateValue) ?? 0;
           return (
-            <path
-              key={band.key}
-              d={`${top}${bottomPath}Z`}
-              fill={palette[keyIndex]}
-              stroke="var(--color-bg)"
-              strokeWidth="1"
-              opacity="0.85"
-            />
+            <rect
+              key={dateValue}
+              x={left + positions[index].column * (cell + gap)}
+              y={top + positions[index].row * (cell + gap)}
+              width={cell}
+              height={cell}
+              fill={color(total)}
+              stroke="var(--color-border)"
+              tabIndex={0}
+              onClick={() => openDate(dateValue)}
+            >
+              <title>
+                {dateValue}: {total} indicators
+              </title>
+            </rect>
           );
         })}
-        {data.map((item: any, index: number) => (
-          <rect
-            key={item.date}
-            x={x(index) - Math.max(2, 450 / data.length)}
-            y="8"
-            width={Math.max(4, 900 / data.length)}
-            height={height - bottom - 8}
-            fill="transparent"
-            tabIndex={0}
-            onDoubleClick={() => {
-              setDate(item.date, item.date);
-              open('bucket', item.date);
-            }}
-          >
-            <title>
-              {item.date}: {item.total}
-            </title>
-          </rect>
-        ))}
-        <line
-          className="baseline"
-          x1={left}
-          x2={width - 8}
-          y1={height - bottom}
-          y2={height - bottom}
-        />
-        <text x={left} y={height - 8}>
-          {data[0]?.date ?? '—'}
-        </text>
-        <text textAnchor="end" x={width - 8} y={height - 8}>
-          {data.at(-1)?.date ?? '—'}
-        </text>
       </svg>
-      {data.length > 1 && (
-        <div className="series-brush" aria-label="Date range brush">
-          <input
-            type="range"
-            min="0"
-            max={data.length - 1}
-            value={rangeStart}
-            onChange={(event) => setRangeStart(Math.min(Number(event.target.value), rangeEnd))}
-            onMouseUp={() => setDate(data[rangeStart]?.date, data[rangeEnd]?.date)}
-          />
-          <input
-            type="range"
-            min="0"
-            max={data.length - 1}
-            value={rangeEnd}
-            onChange={(event) => setRangeEnd(Math.max(Number(event.target.value), rangeStart))}
-            onMouseUp={() => setDate(data[rangeStart]?.date, data[rangeEnd]?.date)}
-          />
-          <span>
-            {data[rangeStart]?.date} — {data[rangeEnd]?.date}
-          </span>
-        </div>
-      )}
-      <div className="chart-legend">
-        {keys.map((key, index) => (
-          <span key={key}>
-            <i style={{ background: palette[index] }} />
-            {key}
-          </span>
+      <div className="heatmap-legend">
+        <span>less</span>
+        {colors.map((item) => (
+          <i key={item} style={{ background: item }} />
         ))}
-        <small>double-click a bucket to filter</small>
+        <span>more</span>
+        <small>
+          {dates[0].toISOString().slice(0, 10)} — {dates.at(-1)?.toISOString().slice(0, 10)} · click
+          a cell to filter
+        </small>
       </div>
     </section>
   );
