@@ -1,0 +1,14 @@
+[
+  {"name":"TA505","aliases":["Hive0067"],"description":"Financially motivated intrusion group.","country":"RU","families":["Dridex"]},
+  {"name":"MuddyWater","aliases":["Seedworm"],"description":"Regional espionage activity cluster.","country":"IR","families":["AsyncRAT"]},
+  {"name":"Lazarus Group","aliases":["Hidden Cobra"],"description":"State-aligned intrusion group.","country":"KP","families":["TrickBot"]},
+  {"name":"FIN7","aliases":["Carbanak Group"],"description":"Financially motivated intrusion group.","country":"RU","families":["QakBot"]},
+  {"name":"Wizard Spider","aliases":["UNC1878"],"description":"Criminal enterprise associated with loader activity.","country":"RU","families":["TrickBot","QakBot"]},
+  {"name":"Mustang Panda","aliases":["RedDelta"],"description":"Espionage group using commodity loaders.","country":"CN","families":["AgentTesla"]},
+  {"name":"Kimsuky","aliases":["Velvet Chollima"],"description":"Espionage activity targeting research organizations.","country":"KP","families":["IcedID"]},
+  {"name":"Sandworm","aliases":["Voodoo Bear"],"description":"Destructive and disruptive intrusion group.","country":"RU","families":["Emotet"]},
+  {"name":"Gamaredon","aliases":["Primitive Bear"],"description":"High-volume regional targeting group.","country":"RU","families":["RedLine"]},
+  {"name":"Turla","aliases":["Snake"],"description":"Long-running espionage intrusion set.","country":"RU","families":["Dridex"]},
+  {"name":"APT29","aliases":["Cozy Bear"],"description":"State-aligned espionage group.","country":"RU","families":["QakBot"]},
+  {"name":"Transparent Tribe","aliases":["APT36"],"description":"Regional espionage and collection group.","country":"PK","families":["AsyncRAT"]}
+]

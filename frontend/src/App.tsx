@@ -11,6 +11,7 @@ const Bulk = lazy(() => import('./pages/Bulk').then((x) => ({ default: x.Bulk })
 const GeoTimeline = lazy(() =>
   import('./pages/GeoTimeline').then((x) => ({ default: x.GeoTimeline })),
 );
+const Feeds = lazy(() => import('./pages/Feeds').then((x) => ({ default: x.Feeds })));
 export default function App() {
   return (
     <div className="min-h-screen bg-base text-primary">
@@ -18,11 +19,13 @@ export default function App() {
       <div className="ml-[184px] pb-7 min-h-screen">
         <Suspense fallback={<main className="p-4 text-secondary">loading module...</main>}>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/search" element={<Home />} />
             <Route path="/investigate/:id" element={<Investigation />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/bulk" element={<Bulk />} />
             <Route path="/geo" element={<GeoTimeline />} />
+            <Route path="/feeds" element={<Feeds />} />
           </Routes>
         </Suspense>
       </div>

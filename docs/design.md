@@ -18,7 +18,7 @@ The canonical tokens live as CSS variables in `frontend/src/index.css`. Tailwind
 | `--color-malicious`      | `#e5534b`        | malicious text or 2px rule only          |
 | `--color-suspicious`     | `#c69026`        | suspicious text or 2px rule only         |
 | `--color-bar`            | `#3a3a3d`        | neutral data bars and map outlines       |
-| `--color-heat-0..4`      | five fixed steps | activity heatmap buckets                 |
+| `--color-heat-0..4`      | five fixed steps | reserved legacy scale                    |
 
 JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Section headings are 11px uppercase secondary text or 600 weight. Spacing follows a 4px scale. Corner radius is at most 2px; tables have square corners.
 
@@ -29,15 +29,14 @@ JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Sec
 - Buttons are transparent with a 1px border. The primary action is light text color on the dark text color inverse.
 - Inputs use a 1px border and a 1px accent focus outline.
 - Tables have hairline row dividers, no zebra striping, and surface-color hover.
-- Transitions are limited to 100ms color, opacity, background, and border changes.
+- Transitions are limited to 100ms color, opacity, background, and border changes. The explorer additionally permits a 320ms count update and a 160ms drawer entrance.
 - Respect `prefers-reduced-motion`.
 
 ## Data visualization
 
 - Graph nodes are neutral flat shapes. Type is conveyed by shape, malicious by a red outline, and selection by the accent outline. No particles, glow, pulse, or persistent labels.
-- Families and sources use sorted neutral horizontal bars.
-- Indicator types use a count-and-percentage table.
-- Activity uses five discrete grey levels; only the highest bucket uses the accent.
+- Explorer dimensions use sorted neutral bar tables, and every row is both filterable and inspectable.
+- Time activity uses a flat stacked series with hairline grid rules and no chart animation.
 - Geo uses a flat equirectangular SVG with unfilled country outlines and 3px semantic dots.
 - Timeline is a native range input over a 1px ticked baseline.
 

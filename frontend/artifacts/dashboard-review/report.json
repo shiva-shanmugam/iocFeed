@@ -1,0 +1,90 @@
+{
+  "viewports": {
+    "1024x768": {
+      "overflow": false,
+      "columns": 2,
+      "rows": 25,
+      "gradients": 0,
+      "shadows": 0,
+      "blur": 0,
+      "errors": []
+    },
+    "1280x900": {
+      "overflow": false,
+      "columns": 3,
+      "rows": 25,
+      "gradients": 0,
+      "shadows": 0,
+      "blur": 0,
+      "errors": []
+    },
+    "1440x900": {
+      "overflow": false,
+      "columns": 3,
+      "rows": 25,
+      "gradients": 0,
+      "shadows": 0,
+      "blur": 0,
+      "errors": []
+    },
+    "1920x1080": {
+      "overflow": false,
+      "columns": 3,
+      "rows": 25,
+      "gradients": 0,
+      "shadows": 0,
+      "blur": 0,
+      "errors": []
+    }
+  },
+  "modals": {
+    "family": {
+      "title": "Emotet",
+      "description": "1,250 matching indicators"
+    },
+    "actor": {
+      "title": "Sandworm",
+      "description": "Destructive and disruptive intrusion group."
+    },
+    "type": {
+      "title": "domain",
+      "description": "2,000 matching indicators"
+    },
+    "source": {
+      "title": "synthetic-seed",
+      "description": "10,000 matching indicators"
+    },
+    "bucket": {
+      "title": "2026-11-14",
+      "description": "37 indicators first observed in this bucket"
+    },
+    "indicator": {
+      "title": "10.0.0.1",
+      "description": "ipv4 · malicious"
+    }
+  },
+  "urlRestore": {
+    "chips": [
+      "type:domain ×",
+      "family:TrickBot ×",
+      "clear all"
+    ],
+    "modal": "Emotet"
+  },
+  "drill": {
+    "title": "Sandworm",
+    "url": "http://localhost:5173/?type=domain&family=TrickBot&modal=actor%3ASandworm"
+  },
+  "escapeClosed": true,
+  "applyFilter": {
+    "url": "http://localhost:5173/?family=Emotet",
+    "chips": [
+      "family:Emotet ×",
+      "clear all"
+    ]
+  },
+  "reducedMotion": {
+    "animation": "1e-05s",
+    "transition": "1e-05s"
+  }
+}

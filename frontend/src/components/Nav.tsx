@@ -5,20 +5,26 @@ export function Nav() {
       <div className="h-12 border-b border-line px-3 flex items-center font-semibold">iocfeed</div>
       <div className="px-2 py-3 space-y-1 text-secondary">
         <NavLink to="/" end className="block border-l-2 border-transparent px-2 py-1.5">
-          lookup
+          Explore
         </NavLink>
-        <NavLink to="/dashboard" className="block border-l-2 border-transparent px-2 py-1.5">
-          dashboard
+        <NavLink to="/search" className="block border-l-2 border-transparent px-2 py-1.5">
+          Search
         </NavLink>
-        <NavLink to="/bulk" className="block border-l-2 border-transparent px-2 py-1.5">
-          bulk triage
+        <NavLink to="/investigate/5" className="block border-l-2 border-transparent px-2 py-1.5">
+          Graph
         </NavLink>
         <NavLink to="/geo" className="block border-l-2 border-transparent px-2 py-1.5">
-          geo / timeline
+          Map
+        </NavLink>
+        <NavLink to="/feeds" className="block border-l-2 border-transparent px-2 py-1.5">
+          Feeds
         </NavLink>
       </div>
-      <div className="absolute bottom-10 left-3 right-3 text-[11px] text-secondary">
-        source: local db
+      <div className="absolute bottom-10 left-2 right-2 text-[11px] text-secondary">
+        <p className="section-label px-2 mb-1">Tools</p>
+        <NavLink to="/bulk" className="block border-l-2 border-transparent px-2 py-1.5">
+          Bulk
+        </NavLink>
       </div>
     </nav>
   );

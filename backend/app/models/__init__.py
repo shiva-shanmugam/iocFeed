@@ -13,7 +13,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
-from sqlalchemy.dialects.postgresql import INET, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, INET, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -91,6 +91,31 @@ class MalwareFamily(Base):
     name: Mapped[str] = mapped_column(String(100), unique=True)
     indicators: Mapped[list[Indicator]] = relationship(
         secondary="indicator_families", back_populates="families"
+    )
+    actors: Mapped[list["ThreatActor"]] = relationship(
+        secondary="actor_families", back_populates="families"
+    )
+
+
+class ThreatActor(Base):
+    __tablename__ = "threat_actors"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    aliases: Mapped[list[str]] = mapped_column(ARRAY(String(100)), default=list)
+    description: Mapped[str] = mapped_column(Text, default="")
+    country: Mapped[str | None] = mapped_column(String(2))
+    families: Mapped[list["MalwareFamily"]] = relationship(
+        secondary="actor_families", back_populates="actors"
+    )
+
+
+class ActorFamily(Base):
+    __tablename__ = "actor_families"
+    actor_id: Mapped[int] = mapped_column(
+        ForeignKey("threat_actors.id", ondelete="CASCADE"), primary_key=True
+    )
+    family_id: Mapped[int] = mapped_column(
+        ForeignKey("malware_families.id", ondelete="CASCADE"), primary_key=True
     )
 
 
