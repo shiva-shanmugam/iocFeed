@@ -36,7 +36,7 @@ JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Sec
 
 - Graph nodes are neutral flat shapes. Type is conveyed by shape, malicious by a red outline, and selection by the accent outline. No particles, glow, pulse, or persistent labels.
 - Explorer dimensions use sorted neutral bar tables, and every row is both filterable and inspectable.
-- Time activity is a temporal archive: overlapping year files are ordered oldest/back to newest/front, with quarter-staggered connected tabs and a miniature day heat map on every file. A file may use a 220ms perspective transform on hover as the sole physical-motion exception. Clicking a year opens ordered month files, then a GitHub-style seven-row day heat map. Cells use four grey intensity steps, with the accent reserved for the highest bucket.
+- Time activity is a temporal archive: overlapping year files are ordered oldest/back to newest/front, with quarter-staggered connected tabs. Hovering one file dims its siblings and may use a 220ms perspective transform as the sole physical-motion exception. Closed year files contain no chart. Clicking a year opens its month files inside that folder; opening a month reveals its GitHub-style seven-row day heat map in the same folder. Cells use four grey intensity steps, with the accent reserved for the highest bucket.
 - Geo uses a flat equirectangular SVG with unfilled country outlines and 3px semantic dots.
 - Timeline is a native range input over a 1px ticked baseline.
 

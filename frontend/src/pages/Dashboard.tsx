@@ -396,27 +396,12 @@ function TemporalArchive({
       });
     });
     const yearRows = Array.from(yearTotals)
-      .map(([year, total]) => {
-        const start = new Date(Date.UTC(year, 0, 1));
-        const daysInYear = Math.round((Date.UTC(year + 1, 0, 1) - start.getTime()) / 86_400_000);
-        const slots: Array<{ date: string; total: number } | null> = [
-          ...Array.from({ length: start.getUTCDay() }, () => null),
-          ...Array.from({ length: daysInYear }, (_, index) => {
-            const date = new Date(start);
-            date.setUTCDate(index + 1);
-            const key = date.toISOString().slice(0, 10);
-            return { date: key, total: nextCounts.get(key) ?? 0 };
-          }),
-        ];
-        return {
-          year,
-          total,
-          first: yearBounds.get(year)?.first ?? `${year}-01-01`,
-          last: yearBounds.get(year)?.last ?? `${year}-12-31`,
-          slots,
-          max: Math.max(1, ...slots.map((item) => item?.total ?? 0)),
-        };
-      })
+      .map(([year, total]) => ({
+        year,
+        total,
+        first: yearBounds.get(year)?.first ?? `${year}-01-01`,
+        last: yearBounds.get(year)?.last ?? `${year}-12-31`,
+      }))
       .sort((a, b) => a.year - b.year);
     return {
       counts: nextCounts,
@@ -471,76 +456,12 @@ function TemporalArchive({
       .at(-1);
     if (latestMonth) setSelectedMonth(latestMonth);
   };
-
-  return (
-    <section id="activity" className="panel timeseries-panel archive-panel">
-      <div className="panel-heading">
-        <div>
-          <h2 className="section-label">Temporal archive</h2>
-          <p className="archive-note">year / month files → day cells → matching IOC rows</p>
-        </div>
-        <div className="chart-controls">
-          <label>
-            basis{' '}
-            <select value={basis} onChange={(event) => setBasis(event.target.value)}>
-              <option value="first_seen">first seen</option>
-              <option value="last_seen">last seen</option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <div className="archive-stack-shell">
-        <div className="archive-depth-labels" aria-hidden="true">
-          <span>oldest / back</span>
-          <span>newest / front</span>
-        </div>
-        <div className="archive-stack" aria-label="Archive year files">
-          {years.map((item, index) => (
-            <button
-              key={item.year}
-              className={item.year === selectedYear ? 'archive-folder selected' : 'archive-folder'}
-              onClick={() => chooseYear(item.year)}
-              aria-pressed={item.year === selectedYear}
-              style={
-                {
-                  '--folder-index': index,
-                  '--tab-slot': index % 4,
-                } as React.CSSProperties
-              }
-            >
-              <span className="archive-folder-tab">{item.year}</span>
-              <span className="archive-folder-face">
-                <span className="archive-folder-meta">
-                  <strong>{item.total.toLocaleString()} IOC</strong>
-                  <small>
-                    {item.first} / {item.last}
-                  </small>
-                </span>
-                <span className="archive-mini-map" aria-hidden="true">
-                  {item.slots.map((cell, slot) =>
-                    cell ? (
-                      <i
-                        className="archive-mini-cell"
-                        key={cell.date}
-                        style={{ backgroundColor: heatColor(cell.total, item.max) }}
-                      />
-                    ) : (
-                      <i className="archive-mini-cell empty" key={`empty-${slot}`} />
-                    ),
-                  )}
-                </span>
-                <span className="archive-folder-state">
-                  {item.year === selectedYear ? 'file open' : 'open file'}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="archive-open-heading">
-        <span>open file</span>
+  const openFolderContents = (
+    <div className="archive-folder-drawer">
+      <div className="archive-drawer-heading">
+        <span>month files</span>
         <strong>{selectedYear}</strong>
-        <small>select a month, then a day</small>
+        <small>open a month to inspect its days</small>
       </div>
       <div className="archive-workspace">
         <div className="archive-months" aria-label={`Months in ${selectedYear}`}>
@@ -565,7 +486,7 @@ function TemporalArchive({
         <div className="archive-days">
           <div className="archive-days-heading">
             <div>
-              <span>{selected.key}</span>
+              <span>month file open / {selected.key}</span>
               <strong>{selected.total.toLocaleString()} indicators</strong>
             </div>
             {selectedDate && <button onClick={clearDate}>clear day filter</button>}
@@ -601,6 +522,66 @@ function TemporalArchive({
             <span>more</span>
             <small>click a day to filter the IOC table</small>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <section id="activity" className="panel timeseries-panel archive-panel">
+      <div className="panel-heading">
+        <div>
+          <h2 className="section-label">Temporal archive</h2>
+          <p className="archive-note">year / month files → day cells → matching IOC rows</p>
+        </div>
+        <div className="chart-controls">
+          <label>
+            basis{' '}
+            <select value={basis} onChange={(event) => setBasis(event.target.value)}>
+              <option value="first_seen">first seen</option>
+              <option value="last_seen">last seen</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div className="archive-stack-shell">
+        <div className="archive-depth-labels" aria-hidden="true">
+          <span>oldest / back</span>
+          <span>newest / front</span>
+        </div>
+        <div className="archive-stack" aria-label="Archive year files">
+          {years.map((item, index) => (
+            <article
+              key={item.year}
+              className={item.year === selectedYear ? 'archive-folder selected' : 'archive-folder'}
+              style={
+                {
+                  '--folder-index': index,
+                  '--tab-slot': index % 4,
+                } as React.CSSProperties
+              }
+            >
+              <button
+                className="archive-folder-tab"
+                onClick={() => chooseYear(item.year)}
+                aria-expanded={item.year === selectedYear}
+              >
+                {item.year}
+              </button>
+              <div className="archive-folder-face">
+                <div className="archive-folder-meta">
+                  <strong>{item.total.toLocaleString()} IOC</strong>
+                  <small>
+                    {item.first} / {item.last}
+                  </small>
+                </div>
+                <span className="archive-folder-state">
+                  {item.year === selectedYear ? 'file open' : 'open file'}
+                </span>
+                {item.year === selectedYear && openFolderContents}
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>

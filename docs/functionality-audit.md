@@ -21,7 +21,7 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 
 ## Checks passed
 
-- Atlas: four overlapping year files with staggered tabs and miniature heat maps, 12 ordered month files, month selection, GitHub-style daily heat cells, day-to-table filtering, six exploration lenses, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
+- Atlas: four overlapping year files with staggered tabs, sibling dimming, and an in-folder drill-down through 12 month files to GitHub-style daily heat cells; day-to-table filtering, six exploration lenses, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
 - Collections: permanent family/type/source/actor/tag/country/ASN routes, activity strip, contextual pivots, indicator table, and Atlas handoff.
 - IOC records: explainable disposition, confidence factors, classification, explicit relationships, metadata pivots, graph handoff, and raw observations.
 - Evidence: one locally rendered page per IOC/source observation, normalized fields, raw JSON, attribution, and upstream link handling.
@@ -34,4 +34,4 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 - APIs: health, summary, facets, time series, indicator rows, entity collections, detailed IOC records, source evidence, graph, graph expansion, graph path, geo points, timeline, ingestion log, and CSV/JSON/blocklist exports.
 - Browser: no console errors during the complete flow.
 
-The automated audit recorded 53 passing checks and zero failures. Backend tests (15 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), Ruff, ESLint, TypeScript, and the production build also pass.
+The automated audit recorded 54 passing checks and zero failures. Backend tests (15 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), Ruff, ESLint, TypeScript, and the production build also pass.

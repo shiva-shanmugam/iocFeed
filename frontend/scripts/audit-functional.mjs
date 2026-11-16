@@ -16,12 +16,10 @@ try {
   await page.goto(`${base}/`, { waitUntil: 'networkidle' });
   await page.locator('.indicators-panel tbody tr').first().waitFor();
   check((await page.locator('.archive-folder').count()) >= 3, 'Temporal archive year files');
-  check(
-    (await page.locator('.archive-mini-cell').count()) >= 1000,
-    'Year files contain miniature heat maps',
-  );
+  check((await page.locator('.archive-mini-cell').count()) === 0, 'Closed year files stay quiet');
   const folder = page.locator('.archive-folder').nth(2);
   const folderTab = folder.locator('.archive-folder-tab');
+  const otherFolder = page.locator('.archive-folder').first();
   const restingTransform = await folder.evaluate(
     (element) => element.ownerDocument.defaultView.getComputedStyle(element).transform,
   );
@@ -31,16 +29,27 @@ try {
     (element) => element.ownerDocument.defaultView.getComputedStyle(element).transform,
   );
   check(restingTransform !== hoverTransform, 'Year file lifts forward on hover');
+  const dimmedOpacity = await otherFolder.evaluate(
+    (element) => element.ownerDocument.defaultView.getComputedStyle(element).opacity,
+  );
+  check(Number(dimmedOpacity) < 0.7, 'Other year files dim during hover');
   await page.screenshot({ path: 'artifacts/functionality/explore-folder-hover.png' });
   await page.mouse.move(1, 1);
-  check((await page.locator('.archive-file').count()) === 12, 'Temporal archive month files');
   check(
-    (await page.locator('.archive-day-grid button').count()) >= 28,
-    'Temporal archive day heat map',
+    (await page.locator('.archive-folder.selected .archive-file').count()) === 12,
+    'Open year contains month files',
+  );
+  check(
+    (await page.locator('.archive-folder.selected .archive-day-grid button').count()) >= 28,
+    'Open month contains day heat map',
   );
   await page.locator('.archive-folder').first().locator('.archive-folder-tab').click();
   check(
-    (await page.locator('.archive-folder').first().getAttribute('aria-pressed')) === 'true',
+    (await page
+      .locator('.archive-folder')
+      .first()
+      .locator('.archive-folder-tab')
+      .getAttribute('aria-expanded')) === 'true',
     'Archive year drill-down',
   );
   await page.locator('.archive-file:not(:disabled)').first().click();
