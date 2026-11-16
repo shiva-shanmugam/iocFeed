@@ -1,5 +1,5 @@
 import asyncio, csv, io, json, ipaddress
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, UploadFile
 from fastapi.responses import StreamingResponse
@@ -34,14 +34,42 @@ def dto(i: Indicator, detail: bool = False):
         "verdict": i.verdict.value,
     }
     if detail:
+        source_names = [x.source.name for x in i.sources]
+        now = datetime.now(timezone.utc)
+        last_seen = i.last_seen
+        if last_seen.tzinfo is None:
+            last_seen = last_seen.replace(tzinfo=timezone.utc)
+        age_days = max(0, (now - last_seen).days)
+        factors = [
+            f"reported by {len(set(source_names))} stored source{'s' if len(set(source_names)) != 1 else ''}",
+            f"last observed {age_days} day{'s' if age_days != 1 else ''} ago",
+            f"stored confidence is {i.confidence}/100",
+        ]
+        action = {
+            "malicious": "block or contain after checking local impact",
+            "suspicious": "monitor and corroborate before enforcement",
+            "unknown": "hold for additional evidence",
+        }[i.verdict.value]
         result.update(
             sources=[
-                {"name": x.source.name, "first_seen": x.first_seen, "last_seen": x.last_seen}
+                {
+                    "name": x.source.name,
+                    "url": x.source.url,
+                    "first_seen": x.first_seen,
+                    "last_seen": x.last_seen,
+                }
                 for x in i.sources
             ],
             tags=[x.name for x in i.tags],
             families=[x.name for x in i.families],
+            actors=sorted({actor.name for family in i.families for actor in family.actors}),
             raw=[x.raw for x in i.sources],
+            decision={
+                "action": action,
+                "summary": f"{i.verdict.value.upper()} in the current dataset; review the stored evidence and recency below.",
+                "factors": factors,
+                "age_days": age_days,
+            },
         )
     return result
 
@@ -50,7 +78,7 @@ def detailed_stmt():
     return select(Indicator).options(
         selectinload(Indicator.sources).selectinload(IndicatorSource.source),
         selectinload(Indicator.tags),
-        selectinload(Indicator.families),
+        selectinload(Indicator.families).selectinload(MalwareFamily.actors),
     )
 
 
@@ -95,7 +123,53 @@ def indicator_detail(indicator_id: int, db: Session = Depends(get_db)):
     row = db.scalar(detailed_stmt().where(Indicator.id == indicator_id))
     if not row:
         raise HTTPException(404, "indicator not found")
-    return dto(row, True)
+    result = dto(row, True)
+    geo = db.scalar(select(IPGeo).where(func.host(IPGeo.ip) == row.value)) if row.type.value == "ipv4" else None
+    result["geo"] = (
+        {
+            "country": geo.country_code,
+            "asn": geo.asn,
+            "as_name": geo.as_name,
+            "lat": geo.lat,
+            "lon": geo.lon,
+        }
+        if geo
+        else None
+    )
+    result["relationship_count"] = db.scalar(
+        select(func.count()).select_from(Relationship).where(
+            or_(
+                Relationship.src_indicator_id == indicator_id,
+                Relationship.dst_indicator_id == indicator_id,
+            )
+        )
+    ) or 0
+    return result
+
+
+@router.get("/evidence/{indicator_id}/{source_name}")
+def evidence(indicator_id: int, source_name: str, db: Session = Depends(get_db)):
+    row = db.scalar(detailed_stmt().where(Indicator.id == indicator_id))
+    if not row:
+        raise HTTPException(404, "indicator not found")
+    observation = next((item for item in row.sources if item.source.name == source_name), None)
+    if not observation:
+        raise HTTPException(404, "source evidence not found")
+    return {
+        "indicator": dto(row),
+        "source": {
+            "name": observation.source.name,
+            "url": observation.source.url,
+            "status": observation.source.status,
+            "last_sync": observation.source.last_sync,
+        },
+        "observation": {
+            "first_seen": observation.first_seen,
+            "last_seen": observation.last_seen,
+            "raw": observation.raw,
+        },
+        "attribution": "Stored from the named source during ingestion. The named upstream source remains the record of origin.",
+    }
 
 
 def _graph(db: Session, root: int, depth: int, max_nodes: int):

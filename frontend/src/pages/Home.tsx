@@ -28,6 +28,10 @@ export function Home() {
   const navigate = useNavigate();
   const recent = useRecent();
   const summary = useQuery({ queryKey: ['summary'], queryFn: api.summary });
+  const facets = useQuery({
+    queryKey: ['search-collections'],
+    queryFn: () => api.exploreFacets(''),
+  });
   const suggestions = useQuery({
     queryKey: ['search', query],
     queryFn: () => api.search(query),
@@ -58,7 +62,7 @@ export function Home() {
       const elapsed = Math.max(1, Math.round(performance.now() - started));
       setFeedback(`1 hit in ${elapsed} ms`);
       recent.add(query);
-      window.setTimeout(() => navigate(`/investigate/${result.indicator.id}`), 180);
+      window.setTimeout(() => navigate(`/ioc/${result.indicator.id}`), 180);
     } catch {
       const elapsed = Math.max(1, Math.round(performance.now() - started));
       setFeedback(`0 hits in ${elapsed} ms`);
@@ -99,21 +103,42 @@ export function Home() {
         {query !== refang(query) ? `refanged: ${refang(query)}` : feedback || 'ctrl+k to focus'}
       </div>
 
-      {suggestions.data?.items?.length ? (
+      {query.length > 2 && (
         <div className="border border-line max-w-[920px] mb-4">
-          <div className="section-label px-2 pt-2">matches</div>
-          {suggestions.data.items.map((item) => (
+          <div className="section-label px-2 pt-2">collections</div>
+          {(['family', 'actor', 'source', 'tag'] as const).flatMap((kind) =>
+            (facets.data?.[kind] ?? [])
+              .filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
+              .slice(0, 2)
+              .map((item) => (
+                <button
+                  key={`${kind}:${item.value}`}
+                  onClick={() => navigate(`/collection/${kind}/${encodeURIComponent(item.value)}`)}
+                  className="w-full border-0 border-t border-line bg-transparent px-2 py-1.5 flex justify-between text-left hover:bg-surface rounded-none"
+                >
+                  <span className="truncate">{item.label}</span>
+                  <span className="text-secondary ml-4">
+                    {kind} · {item.count}
+                  </span>
+                </button>
+              )),
+          )}
+          <div className="section-label px-2 pt-3">indicators</div>
+          {suggestions.data?.items.map((item) => (
             <button
               key={item.id}
-              onClick={() => navigate(`/investigate/${item.id}`)}
+              onClick={() => navigate(`/ioc/${item.id}`)}
               className="w-full border-0 border-t border-line bg-transparent px-2 py-1.5 flex justify-between text-left hover:bg-surface rounded-none"
             >
               <span className="truncate">{item.value}</span>
               <span className="text-secondary ml-4">{item.type}</span>
             </button>
           ))}
+          {!suggestions.data?.items.length && (
+            <p className="px-2 pb-2 text-secondary">no indicator matches</p>
+          )}
         </div>
-      ) : null}
+      )}
 
       <section className="mt-6 max-w-[920px]">
         <h2 className="section-label">recent lookups</h2>

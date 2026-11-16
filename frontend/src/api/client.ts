@@ -39,12 +39,20 @@ export type EntityData = {
   meta: Record<string, unknown>;
   related: { kind: string; value: string; label: string }[];
 };
+export type EvidenceData = {
+  indicator: Indicator;
+  source: { name: string; url: string; status: string; last_sync: string | null };
+  observation: { first_seen: string; last_seen: string; raw: Record<string, unknown> };
+  attribution: string;
+};
 export const api = {
   lookup: (q: string) =>
     request<{ indicator: Indicator; refanged: string }>(`/api/lookup?q=${encodeURIComponent(q)}`),
   search: (q: string) =>
     request<{ items: Indicator[] }>(`/api/search?q=${encodeURIComponent(q)}&page_size=8`),
   detail: (id: number) => request<Indicator>(`/api/indicators/${id}`),
+  evidence: (id: number, source: string) =>
+    request<EvidenceData>(`/api/evidence/${id}/${encodeURIComponent(source)}`),
   graph: (id: number) => request<GraphData>(`/api/graph/${id}?depth=2&max_nodes=250`),
   expand: (id: number) => request<GraphData>(`/api/graph/expand/${id}`),
   path: (a: number, b: number) =>

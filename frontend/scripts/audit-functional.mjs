@@ -16,21 +16,17 @@ try {
   await page.goto(`${base}/`, { waitUntil: 'networkidle' });
   await page.locator('.indicators-panel tbody tr').first().waitFor();
   check((await page.locator('.heatmap-svg rect').count()) === 365, 'Explore year heat map');
+  check((await page.locator('.atlas-lenses a').count()) === 6, 'Atlas exploration lenses');
   check(
     (await page.locator('.indicators-panel tbody tr').count()) === 25,
     'Explore pagination size',
   );
-  await page.locator('.facet-panel').nth(1).locator('.row-more').first().click();
+  await page.locator('.indicators-panel tbody tr').first().click();
   await page.locator('.entity-modal').waitFor();
-  const firstEntity = await page.locator('.entity-modal h2').textContent();
-  if (await page.locator('.related-row').count()) {
-    await page.locator('.related-row').first().click();
-    await page.waitForTimeout(150);
-    check(
-      (await page.locator('.entity-modal h2').textContent()) !== firstEntity,
-      'Entity lateral drill-down',
-    );
-  }
+  check(
+    (await page.getByRole('link', { name: 'open full record' }).count()) === 1,
+    'IOC preview links to permanent record',
+  );
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
   check((await page.locator('.entity-modal').count()) === 0, 'Entity drawer Escape close');
@@ -47,13 +43,40 @@ try {
   check(page.url().includes('page=2'), 'Table pagination updates URL');
   await page.screenshot({ path: 'artifacts/functionality/explore.png', fullPage: false });
 
+  await page.goto(`${base}/`, { waitUntil: 'networkidle' });
+  await page.locator('.facet-panel').nth(1).locator('.row-more').first().click();
+  await page.waitForURL(/\/collection\/family\//);
+  await page.locator('.collection-table tbody tr').first().waitFor();
+  check((await page.getByText('Continue exploring').count()) === 1, 'Collection contextual pivots');
+  check((await page.locator('.activity-strip i').count()) > 0, 'Collection activity strip');
+  await page.screenshot({ path: 'artifacts/functionality/collection.png', fullPage: false });
+  await page.locator('.collection-table .table-link').first().click();
+  await page.waitForURL(/\/ioc\/\d+/);
+  await page.getByText(/recommended disposition/).waitFor();
+  check((await page.locator('.decision-block').count()) === 1, 'IOC explainable decision');
+  check((await page.getByText('Evidence reports').count()) === 1, 'IOC evidence section');
+  check(
+    (await page.locator('.nav-trail-item').count()) >= 2,
+    'Investigation trail records drill-down',
+  );
+  await page.screenshot({ path: 'artifacts/functionality/ioc-record.png', fullPage: false });
+  await page.locator('.evidence-list a').first().click();
+  await page.waitForURL(/\/evidence\/\d+\//);
+  await page.getByText('Normalized source record').waitFor();
+  check(
+    (await page.getByText('Normalized source record').count()) === 1,
+    'Local source evidence page',
+  );
+  check((await page.getByText('Attribution').count()) === 1, 'Evidence attribution');
+  await page.screenshot({ path: 'artifacts/functionality/evidence.png', fullPage: false });
+
   await page.goto(`${base}/search`, { waitUntil: 'networkidle' });
   await page.getByLabel('IOC search').fill('10.0.0.1');
-  await page.locator('text=matches').waitFor();
+  await page.getByText('indicators', { exact: true }).waitFor();
   check((await page.locator('text=10.0.0.1').count()) > 0, 'Search suggestions');
   await page.getByRole('button', { name: '10.0.0.1 ipv4', exact: true }).click();
-  await page.waitForURL(/\/investigate\/1/);
-  check(page.url().endsWith('/investigate/1'), 'Search opens graph root');
+  await page.waitForURL(/\/ioc\/1/);
+  check(page.url().endsWith('/ioc/1'), 'Search opens IOC record');
 
   await page.goto(`${base}/graph`, { waitUntil: 'networkidle' });
   check((await page.getByText('How the graph behaves').count()) === 1, 'Graph interaction guide');
@@ -62,7 +85,10 @@ try {
   await page.locator('.graph-result').first().click();
   await page.waitForURL(/\/investigate\//);
   await page.locator('canvas').waitFor();
-  await page.getByText(/explicit relationships/).first().waitFor();
+  await page
+    .getByText(/explicit relationships/)
+    .first()
+    .waitFor();
   check((await page.locator('canvas').count()) === 1, 'Relationship graph renders');
   check((await page.getByText(/click node/).count()) === 1, 'Graph instructions remain visible');
   check((await page.getByLabel('Close detail').count()) === 1, 'Root evidence drawer opens');
@@ -104,6 +130,9 @@ try {
     '/api/explore/facets',
     '/api/explore/timeseries?bucket=day&group=none&basis=first_seen',
     '/api/explore/indicators?page=1&page_size=25',
+    '/api/explore/entity/family/Emotet',
+    '/api/indicators/1',
+    '/api/evidence/1/synthetic-seed',
     '/api/graph/5?depth=2&max_nodes=250',
     '/api/graph/expand/5',
     '/api/geo/points',

@@ -70,6 +70,9 @@ export function DetailDrawer({ id, onClose }: { id: number | null; onClose: () =
             >
               copy defanged
             </button>
+            <Link className="action-primary" to={`/ioc/${data.id}`}>
+              full record
+            </Link>
           </div>
 
           <div className="flex gap-4 border-b border-line mt-4 mb-3">
@@ -121,19 +124,25 @@ export function DetailDrawer({ id, onClose }: { id: number | null; onClose: () =
               <Label text="continue exploring" />
               <div className="grid grid-cols-2 gap-2">
                 {data.families?.[0] && (
-                  <Link className="action" to={`/?family=${encodeURIComponent(data.families[0])}`}>
+                  <Link
+                    className="action"
+                    to={`/collection/family/${encodeURIComponent(data.families[0])}`}
+                  >
                     family dataset
                   </Link>
                 )}
                 {data.tags?.[0] && (
-                  <Link className="action" to={`/?tag=${encodeURIComponent(data.tags[0])}`}>
+                  <Link
+                    className="action"
+                    to={`/collection/tag/${encodeURIComponent(data.tags[0])}`}
+                  >
                     tag dataset
                   </Link>
                 )}
                 {data.sources?.[0] && (
                   <Link
                     className="action"
-                    to={`/?source=${encodeURIComponent(data.sources[0].name)}`}
+                    to={`/collection/source/${encodeURIComponent(data.sources[0].name)}`}
                   >
                     source dataset
                   </Link>

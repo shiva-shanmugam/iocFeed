@@ -71,7 +71,7 @@ export function Dashboard() {
     <main className="explore-page">
       <header className="explore-header">
         <div>
-          <h1>Explore</h1>
+          <h1>IOC Atlas</h1>
           <p>
             {count.toLocaleString()} indicators across {summary.data?.sources ?? 0} sources ·{' '}
             {summary.data?.families ?? 0} families · {summary.data?.actors ?? 0} adversaries
@@ -83,6 +83,15 @@ export function Dashboard() {
           {summary.isFetching || facets.isFetching ? 'querying' : 'ready'}
         </span>
       </header>
+      <nav className="atlas-lenses" aria-label="Atlas lenses">
+        <span>lenses</span>
+        <a href="#activity">activity</a>
+        <a href="#types">IOC types</a>
+        <a href="#families">families</a>
+        <a href="#actors">actors</a>
+        <a href="#sources">sources</a>
+        <a href="#geography">infrastructure</a>
+      </nav>
       <section className="filter-shell" aria-label="Global filters">
         <input
           className="field contains-field"
@@ -144,57 +153,62 @@ export function Dashboard() {
           openDate={filters.openDate}
         />
         <FacetPanel
+          id="types"
           title="Indicator types"
+          kind="type"
           items={facets.data?.type}
           selected={filters.values('type')}
           onToggle={(v) => filters.toggle('type', v)}
-          onOpen={(v) => open('type', v)}
         />
         <FacetPanel
+          id="families"
           title="Malware families"
+          kind="family"
           items={facets.data?.family}
           selected={filters.values('family')}
           onToggle={(v) => filters.toggle('family', v)}
-          onOpen={(v) => open('family', v)}
         />
         <FacetPanel
+          id="actors"
           title="Adversaries"
+          kind="actor"
           items={facets.data?.actor}
           selected={filters.values('actor')}
           onToggle={(v) => filters.toggle('actor', v)}
-          onOpen={(v) => open('actor', v)}
         />
         <FacetPanel
+          id="sources"
           title="Sources"
+          kind="source"
           items={facets.data?.source}
           selected={filters.values('source')}
           onToggle={(v) => filters.toggle('source', v)}
-          onOpen={(v) => open('source', v)}
         />
         <FacetPanel
+          id="tags"
           title="Tags"
+          kind="tag"
           items={facets.data?.tag}
           selected={filters.values('tag')}
           onToggle={(v) => filters.toggle('tag', v)}
-          onOpen={(v) => open('tag', v)}
           compact
         />
-        <section className="panel geography-panel">
+        <section id="geography" className="panel geography-panel">
           <h2 className="section-label">Geography</h2>
           <div className="geography-columns">
             <MiniFacet
               title="Countries"
+              kind="country"
               items={facets.data?.country}
               selected={filters.values('country')}
               toggle={(v) => filters.toggle('country', v)}
-              open={(v) => open('country', v)}
             />
             <MiniFacet
               title="Networks"
+              kind="asn"
               items={facets.data?.asn}
               selected={filters.values('asn')}
               toggle={(v) => filters.toggle('asn', v)}
-              open={(v) => open('asn', v)}
             />
           </div>
         </section>
@@ -237,23 +251,25 @@ export function Dashboard() {
 }
 
 function FacetPanel({
+  id,
   title,
+  kind,
   items = [],
   selected,
   onToggle,
-  onOpen,
   compact = false,
 }: {
+  id: string;
   title: string;
+  kind: string;
   items?: FacetItem[];
   selected: string[];
   onToggle: (value: string) => void;
-  onOpen: (value: string) => void;
   compact?: boolean;
 }) {
   const max = Math.max(1, ...items.map((item) => item.count));
   return (
-    <section className="panel facet-panel">
+    <section id={id} className="panel facet-panel">
       <h2 className="section-label">{title}</h2>
       <div className={compact ? 'facet-list compact' : 'facet-list'}>
         {items.slice(0, compact ? 14 : 9).map((item) => (
@@ -268,13 +284,13 @@ function FacetPanel({
               </span>
               <b>{item.count.toLocaleString()}</b>
             </button>
-            <button
+            <Link
               className="row-more"
-              onClick={() => onOpen(item.value)}
+              to={`/collection/${kind}/${encodeURIComponent(item.value)}`}
               aria-label={`Details for ${item.label}`}
             >
               ›
-            </button>
+            </Link>
           </div>
         ))}
       </div>
@@ -284,16 +300,16 @@ function FacetPanel({
 
 function MiniFacet({
   title,
+  kind,
   items = [],
   selected,
   toggle,
-  open,
 }: {
   title: string;
+  kind: string;
   items?: FacetItem[];
   selected: string[];
   toggle: (v: string) => void;
-  open: (v: string) => void;
 }) {
   return (
     <div>
@@ -305,9 +321,12 @@ function MiniFacet({
         >
           <button onClick={() => toggle(item.value)}>{item.label}</button>
           <span>{item.count}</span>
-          <button onClick={() => open(item.value)} aria-label={`Details for ${item.label}`}>
+          <Link
+            to={`/collection/${kind}/${encodeURIComponent(item.value)}`}
+            aria-label={`Details for ${item.label}`}
+          >
             ›
-          </button>
+          </Link>
         </div>
       ))}
     </div>
@@ -358,7 +377,7 @@ function HeatMap({ data, basis, setBasis, openDate }: any) {
   );
 
   return (
-    <section className="panel timeseries-panel">
+    <section id="activity" className="panel timeseries-panel">
       <div className="panel-heading">
         <h2 className="section-label">Indicator activity</h2>
         <div className="chart-controls">
@@ -532,7 +551,7 @@ function EntityModal({
         <Dialog.Overlay className="modal-scrim" />
         <Dialog.Content className="entity-modal">
           <nav className="entity-crumb" aria-label="Entity position">
-            Explore / {kind || 'entity'} / {data?.title ?? value}
+            Atlas / {kind || 'entity'} / {data?.title ?? value}
           </nav>
           <div className="modal-top">
             <div>
@@ -579,14 +598,22 @@ function EntityModal({
               )}
               <footer>
                 {kind === 'indicator' && (
-                  <Link className="action-primary" to={`/investigate/${value}`}>
-                    open relationship graph
+                  <Link className="action-primary" to={`/ioc/${value}`}>
+                    open full record
                   </Link>
                 )}
                 {kind !== 'indicator' && kind !== 'bucket' && (
-                  <button className="action-primary" onClick={() => apply(kind, value)}>
-                    apply as filter
-                  </button>
+                  <>
+                    <Link
+                      className="action"
+                      to={`/collection/${kind}/${encodeURIComponent(value)}`}
+                    >
+                      open collection
+                    </Link>
+                    <button className="action-primary" onClick={() => apply(kind, value)}>
+                      apply as filter
+                    </button>
+                  </>
                 )}
                 <Dialog.Close className="action">close</Dialog.Close>
               </footer>

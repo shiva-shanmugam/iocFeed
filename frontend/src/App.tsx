@@ -15,6 +15,11 @@ const Feeds = lazy(() => import('./pages/Feeds').then((x) => ({ default: x.Feeds
 const GraphStart = lazy(() =>
   import('./pages/GraphStart').then((x) => ({ default: x.GraphStart })),
 );
+const Collection = lazy(() =>
+  import('./pages/Collection').then((x) => ({ default: x.Collection })),
+);
+const IOCRecord = lazy(() => import('./pages/IOCRecord').then((x) => ({ default: x.IOCRecord })));
+const Evidence = lazy(() => import('./pages/Evidence').then((x) => ({ default: x.Evidence })));
 export default function App() {
   return (
     <div className="min-h-screen bg-base text-primary">
@@ -26,6 +31,9 @@ export default function App() {
             <Route path="/search" element={<Home />} />
             <Route path="/investigate/:id" element={<Investigation />} />
             <Route path="/graph" element={<GraphStart />} />
+            <Route path="/collection/:kind/:value" element={<Collection />} />
+            <Route path="/ioc/:id" element={<IOCRecord />} />
+            <Route path="/evidence/:id/:source" element={<Evidence />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/bulk" element={<Bulk />} />
             <Route path="/geo" element={<GeoTimeline />} />
