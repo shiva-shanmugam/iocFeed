@@ -1,9 +1,11 @@
 import { NavLink } from 'react-router-dom';
 import { useInvestigationTrail } from '../hooks/useInvestigationTrail';
+import { AmbientOrbit } from './AmbientOrbit';
 export function Nav() {
   const trail = useInvestigationTrail();
   return (
-    <nav className="fixed inset-y-0 left-0 z-40 w-[184px] border-r border-line bg-base pb-7">
+    <nav className="fixed inset-y-0 left-0 z-40 w-[184px] border-r border-line bg-base pb-7 overflow-hidden">
+      <AmbientOrbit />
       <div className="h-12 border-b border-line px-3 flex items-center font-semibold">iocfeed</div>
       <div className="px-2 py-3 space-y-1 text-secondary">
         <NavLink to="/" end className="block border-l-2 border-transparent px-2 py-1.5">

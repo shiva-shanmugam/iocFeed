@@ -20,6 +20,8 @@
   --color-heat-4: #5b5b62;
   --color-heat-5: #707078;
   --color-heat-6: #7aa2f7;
+  --ambient-orbit-opacity: 0.28;
+  --ambient-orbit-duration: 96s;
   --sidebar-width: 184px;
   --status-height: 28px;
   font-family: 'JetBrains Mono', monospace;
@@ -178,6 +180,28 @@ input[type='range'] {
 .float-tooltip-kap {
   border-radius: 2px !important;
   box-shadow: none !important;
+}
+
+.ambient-orbit {
+  position: absolute;
+  z-index: -1;
+  left: -68px;
+  bottom: 132px;
+  width: 240px;
+  height: 240px;
+  color: var(--color-text-secondary);
+  opacity: var(--ambient-orbit-opacity);
+  pointer-events: none;
+}
+.ambient-orbit-track {
+  transform-box: view-box;
+  transform-origin: center;
+  animation: ambient-orbit-turn var(--ambient-orbit-duration) linear infinite;
+}
+@keyframes ambient-orbit-turn {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .explore-page {
@@ -1240,6 +1264,9 @@ input[type='range'] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ambient-orbit-track {
+    animation: none;
+  }
   *,
   *::before,
   *::after {

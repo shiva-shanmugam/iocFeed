@@ -1,0 +1,12 @@
+{
+  "rotation": true,
+  "decoration": {
+    "pointerEvents": "none",
+    "hidden": "true",
+    "opacity": "0.28"
+  },
+  "navigation": true,
+  "reducedMotion": "none",
+  "horizontalOverflow": false,
+  "consoleErrors": []
+}

@@ -33,6 +33,7 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 - Feeds: source table and ingestion log.
 - APIs: health, summary, facets, time series, indicator rows, entity collections, detailed IOC records, source evidence, graph, graph expansion, graph path, geo points, timeline, ingestion log, and CSV/JSON/blocklist exports.
 - Browser: no console errors during the complete flow.
+- Ambient orbit: the lower-sidebar arc rotates continuously without intercepting clicks, persists across navigation, stops entirely for reduced motion, and adds no horizontal overflow at 820px. A 1440×900 screenshot and browser verification are stored as `ambient-orbit.png` and `ambient-orbit-report.json` beside the other artifacts.
 
 The latest full app audit recorded 58 passing checks and zero failures. The focused archive audit (`frontend/scripts/audit-archive.mjs`) checks compact year opening, expansion only after a day click, collapse when cleared, and repeated day selection across all four years. The focused run passed all 53 checks over 406 animation frames, confirming that the heatmap stays stationary and uncovered during expansion and collapse, and that the full file remains stable during subsequent day changes. It also verified full-file controls, right-side years, keyboard opening at 820px, and reduced motion; its result is in `frontend/artifacts/functionality/archive-report.json`.
 
