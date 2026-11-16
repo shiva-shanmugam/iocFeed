@@ -555,53 +555,44 @@ function TemporalArchive({
                         ))}
                         <span>more</span>
                       </div>
-                      <div className="archive-results" aria-live="polite">
-                        {selectedDate && selectedDate.startsWith(`${item.year}-`) ? (
-                          <>
-                            <div className="archive-results-heading">
-                              <strong>{selectedDate} / IOC records</strong>
-                              <button onClick={clearDate}>clear day filter</button>
-                            </div>
-                            <div className="archive-results-scroll">
-                              {!rows && <p>Loading IOC records…</p>}
-                              {rows?.items.map((row) => (
-                                <button
-                                  key={row.id}
-                                  className="archive-result"
-                                  onClick={() => openIOC(row.id)}
-                                >
-                                  <span>{row.type}</span>
-                                  <span>{row.value}</span>
-                                  <span className={`verdict-${row.verdict}`}>{row.verdict}</span>
-                                </button>
-                              ))}
-                              {rows && rows.items.length === 0 && (
-                                <p>No matching IOCs on this day.</p>
-                              )}
-                            </div>
-                            <div className="archive-results-page">
-                              <span>
-                                {rows
-                                  ? `${rows.total.toLocaleString()} IOCs · page ${page} / ${totalPages}`
-                                  : 'Loading IOC records…'}
-                              </span>
-                              <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                                previous
-                              </button>
+                      {selectedDate && selectedDate.startsWith(`${item.year}-`) && (
+                        <div className="archive-results" aria-live="polite">
+                          <div className="archive-results-heading">
+                            <strong>{selectedDate} / IOC records</strong>
+                            <button onClick={clearDate}>clear day filter</button>
+                          </div>
+                          <div className="archive-results-scroll">
+                            {!rows && <p>Loading IOC records…</p>}
+                            {rows?.items.map((row) => (
                               <button
-                                disabled={page >= totalPages}
-                                onClick={() => setPage(page + 1)}
+                                key={row.id}
+                                className="archive-result"
+                                onClick={() => openIOC(row.id)}
                               >
-                                next
+                                <span>{row.type}</span>
+                                <span>{row.value}</span>
+                                <span className={`verdict-${row.verdict}`}>{row.verdict}</span>
                               </button>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="archive-results-prompt">
-                            Select a day to inspect its IOC records.
-                          </p>
-                        )}
-                      </div>
+                            ))}
+                            {rows && rows.items.length === 0 && (
+                              <p>No matching IOCs on this day.</p>
+                            )}
+                          </div>
+                          <div className="archive-results-page">
+                            <span>
+                              {rows
+                                ? `${rows.total.toLocaleString()} IOCs · page ${page} / ${totalPages}`
+                                : 'Loading IOC records…'}
+                            </span>
+                            <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                              previous
+                            </button>
+                            <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                              next
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

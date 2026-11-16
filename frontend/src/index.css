@@ -499,12 +499,6 @@ input[type='range'] {
   height: 40px;
   padding: 8px 0;
 }
-.archive-results-prompt {
-  margin: 0;
-  padding: 12px 0;
-  color: var(--color-text-secondary);
-  font-size: 11px;
-}
 .archive-results-heading button {
   margin-left: auto;
 }
