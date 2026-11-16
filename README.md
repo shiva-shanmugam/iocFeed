@@ -1,6 +1,6 @@
 # IOC//FEED
 
-A local-first IOC lookup and small-scale threat-intelligence console. It ingests up to 10,000 URLs, IPv4 addresses, domains, and hashes into PostgreSQL, exposes a FastAPI API, and presents investigations in a dark React SOC interface. No third-party threat service is queried during a lookup.
+A local-first IOC lookup and threat-intelligence console. It ingests up to 110,000 URLs, IPv4 addresses, domains, and hashes into PostgreSQL, exposes a FastAPI API, and presents investigations in a dark React SOC interface. No third-party threat service is queried during a lookup.
 
 ## Architecture
 
@@ -31,7 +31,7 @@ Open:
 - API health: http://localhost:8000/api/health
 - PostgreSQL: `localhost:5432`
 
-No `.env` file is required for the synthetic demo; copy `.env.example` to `.env` only when customizing it. On first boot the API waits for PostgreSQL, runs Alembic, and initializes data. With no `ABUSECH_AUTH_KEY`, it prints a warning and generates exactly `MAX_INDICATORS` deterministic synthetic rows (10,000 by default). The operation is idempotent. The worker then refreshes feeds every 30 minutes or keeps the seeded demo available when credentials/network are absent.
+No `.env` file is required for the synthetic demo; copy `.env.example` to `.env` only when customizing it. On first boot the API waits for PostgreSQL, runs Alembic, and initializes data. With no `ABUSECH_AUTH_KEY`, it prints a warning and generates exactly `MAX_INDICATORS` deterministic synthetic rows (110,000 by default) across a three-year activity window. The operation is idempotent. The worker then refreshes feeds every 30 minutes or keeps the seeded demo available when credentials/network are absent.
 
 ## Real feeds and geo
 
@@ -52,7 +52,7 @@ For real IP geolocation, download a GeoLite2 City database from MaxMind, mount i
 | `DATABASE_URL` | Compose PostgreSQL URL | SQLAlchemy/psycopg connection |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `ioc`, `ioc`, `change-me` | Database bootstrap |
 | `ABUSECH_AUTH_KEY` | empty | Enables live ingestion |
-| `MAX_INDICATORS` | `10000` | Global hard cap |
+| `MAX_INDICATORS` | `110000` | Global hard cap |
 | `INGEST_INTERVAL_MINUTES` | `30` | Worker schedule |
 | `MAXMIND_DB_PATH` | empty | Optional GeoLite2 City file |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Sole allowed CORS origin |
@@ -78,7 +78,7 @@ The manual ingestion entry point is `python -m ingest.run --once`. API ingestion
 1. Search `10.0.0.1`, a deterministic seeded IPv4 IOC.
 2. Open a result such as `http://node-3.malware-test.example/drop/4.bin`, expand graph nodes, select two nodes to request their shortest path, and open the risk drawer.
 3. Use family, ASN, `/24`, and tag pivots in the drawer.
-4. Open **Landscape** to inspect family bubbles, the 90-day activity heatmap, type/source charts, and ingestion log.
+4. Open **IOC Atlas** to drill from year indexes into ordered month files, then select a day cell to filter the matching IOC rows.
 5. Paste `10.0.0.1`, `node-2.malware-test.example`, and an unknown value into **Bulk Triage**, then export a format.
 6. Open **Geo+Time**, choose Emotet, and play the timeline.
 

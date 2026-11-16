@@ -1,6 +1,6 @@
 # Functional audit
 
-Audit date: 2026-11-16. The local Docker application was tested at 1440×900 with Playwright after the graph, Atlas, permanent collection, IOC record, and source-evidence changes. The machine-readable result is in `frontend/artifacts/functionality/report.json`; screenshots are stored beside it.
+Audit date: 2026-11-16. The local Docker application was tested at 1440×900 with Playwright against 110,000 indicators after the temporal archive, graph, Atlas, permanent collection, IOC record, and source-evidence changes. The machine-readable result is in `frontend/artifacts/functionality/report.json`; screenshots are stored beside it.
 
 ## Relationship graph model
 
@@ -21,7 +21,7 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 
 ## Checks passed
 
-- Atlas: six exploration lenses, 365-day heat map, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
+- Atlas: four-year temporal index, 12 ordered month files, month selection, GitHub-style daily heat cells, day-to-table filtering, six exploration lenses, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
 - Collections: permanent family/type/source/actor/tag/country/ASN routes, activity strip, contextual pivots, indicator table, and Atlas handoff.
 - IOC records: explainable disposition, confidence factors, classification, explicit relationships, metadata pivots, graph handoff, and raw observations.
 - Evidence: one locally rendered page per IOC/source observation, normalized fields, raw JSON, attribution, and upstream link handling.
@@ -29,9 +29,9 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 - Search: grouped collection and indicator suggestions, with indicators opening permanent IOC records.
 - Graph: root picker, instruction strip, canvas render, evidence drawer open/close, initial expansion API, neighbour expansion API, and shortest-path API.
 - Bulk: parsing three inputs and verdict filtering.
-- Map/timeline: 992 plotted points, family filter, date-range filter, play, and pause.
+- Map/timeline: plotted points, family filter, date-range filter, play, and pause.
 - Feeds: source table and ingestion log.
 - APIs: health, summary, facets, time series, indicator rows, entity collections, detailed IOC records, source evidence, graph, graph expansion, graph path, geo points, timeline, ingestion log, and CSV/JSON/blocklist exports.
 - Browser: no console errors during the complete flow.
 
-The automated audit recorded 47 passing checks and zero failures. Backend tests (13 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), Ruff, ESLint, TypeScript, and the production build also pass.
+The automated audit recorded 51 passing checks and zero failures. Backend tests (15 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), Ruff, ESLint, TypeScript, and the production build also pass.

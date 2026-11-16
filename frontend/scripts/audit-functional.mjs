@@ -15,12 +15,33 @@ page.on('console', (message) => message.type() === 'error' && consoleErrors.push
 try {
   await page.goto(`${base}/`, { waitUntil: 'networkidle' });
   await page.locator('.indicators-panel tbody tr').first().waitFor();
-  check((await page.locator('.heatmap-svg rect').count()) === 365, 'Explore year heat map');
+  check((await page.locator('.archive-years button').count()) >= 3, 'Temporal archive year index');
+  check((await page.locator('.archive-file').count()) === 12, 'Temporal archive month files');
+  check(
+    (await page.locator('.archive-day-grid button').count()) >= 28,
+    'Temporal archive day heat map',
+  );
+  await page.locator('.archive-years button').last().click();
+  check(
+    (await page.locator('.archive-years button').last().getAttribute('aria-pressed')) === 'true',
+    'Archive year drill-down',
+  );
+  await page.locator('.archive-file:not(:disabled)').first().click();
+  await page.locator('.archive-day-grid button').first().click();
+  await page.locator('.entity-modal').waitFor();
+  check(page.url().includes('date_from='), 'Archive day filters IOC rows');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'clear day filter' }).click();
+  await page.waitForFunction(
+    () => document.querySelectorAll('.indicators-panel tbody tr').length === 25,
+  );
   check((await page.locator('.atlas-lenses a').count()) === 6, 'Atlas exploration lenses');
   check(
     (await page.locator('.indicators-panel tbody tr').count()) === 25,
     'Explore pagination size',
   );
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({ path: 'artifacts/functionality/explore.png', fullPage: false });
   await page.locator('.indicators-panel tbody tr').first().click();
   await page.locator('.entity-modal').waitFor();
   check(
@@ -41,7 +62,6 @@ try {
   );
   await page.getByRole('button', { name: 'next' }).click();
   check(page.url().includes('page=2'), 'Table pagination updates URL');
-  await page.screenshot({ path: 'artifacts/functionality/explore.png', fullPage: false });
 
   await page.goto(`${base}/`, { waitUntil: 'networkidle' });
   await page.locator('.facet-panel').nth(1).locator('.row-more').first().click();
@@ -72,7 +92,7 @@ try {
 
   await page.goto(`${base}/search`, { waitUntil: 'networkidle' });
   await page.getByLabel('IOC search').fill('10.0.0.1');
-  await page.getByText('indicators', { exact: true }).waitFor();
+  await page.getByRole('button', { name: '10.0.0.1 ipv4', exact: true }).waitFor();
   check((await page.locator('text=10.0.0.1').count()) > 0, 'Search suggestions');
   await page.getByRole('button', { name: '10.0.0.1 ipv4', exact: true }).click();
   await page.waitForURL(/\/ioc\/1/);

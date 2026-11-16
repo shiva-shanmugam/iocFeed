@@ -40,6 +40,12 @@ export function useExploreFilters() {
         next.set('date_from', from);
         next.set('date_to', to);
       }),
+    clearDates: () =>
+      update((next) => {
+        next.delete('date_from');
+        next.delete('date_to');
+        next.delete('modal');
+      }),
     openDate: (value: string) =>
       update((next) => {
         next.set('date_from', value);

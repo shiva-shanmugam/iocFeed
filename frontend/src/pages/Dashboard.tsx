@@ -1,6 +1,6 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, type EntityData, type ExploreRow, type FacetItem } from '../api/client';
 import { type FilterKey, useExploreFilters } from '../hooks/useExploreFilters';
@@ -38,6 +38,14 @@ export function Dashboard() {
     next.delete('page');
     return next.toString();
   })();
+  const seriesQuery = (() => {
+    const next = new URLSearchParams(filters.params);
+    next.delete('modal');
+    next.delete('page');
+    next.delete('date_from');
+    next.delete('date_to');
+    return next.toString();
+  })();
   useEffect(() => {
     const timer = window.setTimeout(() => filters.setOne('contains', contains || undefined), 250);
     return () => clearTimeout(timer);
@@ -55,8 +63,8 @@ export function Dashboard() {
     placeholderData: keepPreviousData,
   });
   const series = useQuery({
-    queryKey: ['explore-series', apiQuery, basis],
-    queryFn: () => api.exploreTimeseries(apiQuery, 'day', 'none', basis),
+    queryKey: ['explore-series', seriesQuery, basis],
+    queryFn: () => api.exploreTimeseries(seriesQuery, 'day', 'none', basis),
     placeholderData: keepPreviousData,
   });
   const rows = useQuery({
@@ -146,11 +154,17 @@ export function Dashboard() {
         )}
       </section>
       <div className="explore-grid">
-        <HeatMap
+        <TemporalArchive
           data={series.data?.items ?? []}
           basis={basis}
           setBasis={setBasis}
           openDate={filters.openDate}
+          selectedDate={
+            filters.params.get('date_from') === filters.params.get('date_to')
+              ? filters.params.get('date_from')
+              : null
+          }
+          clearDate={filters.clearDates}
         />
         <FacetPanel
           id="types"
@@ -333,29 +347,82 @@ function MiniFacet({
   );
 }
 
-function HeatMap({ data, basis, setBasis, openDate }: any) {
-  const cell = 13;
-  const gap = 3;
-  const left = 34;
-  const top = 24;
-  const counts = new Map<string, number>(data.map((item: any) => [item.date, Number(item.total)]));
-  const end = data.length ? new Date(`${data.at(-1).date}T00:00:00Z`) : new Date();
-  const start = new Date(end);
-  start.setUTCDate(start.getUTCDate() - 364);
-  const dates: Date[] = Array.from({ length: 365 }, (_, index) => {
-    const date = new Date(start);
-    date.setUTCDate(start.getUTCDate() + index);
-    return date;
+type TimePoint = { date: string; total: number };
+
+function TemporalArchive({
+  data,
+  basis,
+  setBasis,
+  openDate,
+  selectedDate,
+  clearDate,
+}: {
+  data: TimePoint[];
+  basis: string;
+  setBasis: (value: string) => void;
+  openDate: (value: string) => void;
+  selectedDate: string | null;
+  clearDate: () => void;
+}) {
+  const { counts, archive, years, latestKey } = useMemo(() => {
+    const nextCounts = new Map(data.map((item) => [item.date, Number(item.total)]));
+    const nextArchive = new Map<string, { total: number; activeDays: number }>();
+    const yearTotals = new Map<number, number>();
+    data.forEach((item) => {
+      const key = item.date.slice(0, 7);
+      const current = nextArchive.get(key) ?? { total: 0, activeDays: 0 };
+      nextArchive.set(key, {
+        total: current.total + Number(item.total),
+        activeDays: current.activeDays + (item.total > 0 ? 1 : 0),
+      });
+      const year = Number(item.date.slice(0, 4));
+      yearTotals.set(year, (yearTotals.get(year) ?? 0) + Number(item.total));
+    });
+    return {
+      counts: nextCounts,
+      archive: nextArchive,
+      years: Array.from(yearTotals)
+        .map(([year, total]) => ({ year, total }))
+        .sort((a, b) => b.year - a.year),
+      latestKey: Array.from(nextArchive.keys()).sort().at(-1) ?? '',
+    };
+  }, [data]);
+  const [selectedYear, setSelectedYear] = useState(Number(latestKey.slice(0, 4)) || new Date().getUTCFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(latestKey);
+
+  useEffect(() => {
+    if (!years.some((item) => item.year === selectedYear) && years[0]) {
+      setSelectedYear(years[0].year);
+    }
+    if (!archive.has(selectedMonth) && latestKey) setSelectedMonth(latestKey);
+  }, [archive, latestKey, selectedMonth, selectedYear, years]);
+
+  const monthRows = Array.from({ length: 12 }, (_, index) => {
+    const key = `${selectedYear}-${String(index + 1).padStart(2, '0')}`;
+    const item = archive.get(key) ?? { total: 0, activeDays: 0 };
+    return {
+      key,
+      number: String(index + 1).padStart(2, '0'),
+      label: new Date(Date.UTC(selectedYear, index, 1)).toLocaleString('en', {
+        month: 'short',
+        timeZone: 'UTC',
+      }),
+      ...item,
+    };
   });
-  const firstOffset = dates[0].getUTCDay();
-  const positions = dates.map((date: Date, index: number) => {
-    const slot = index + firstOffset;
-    return { row: date.getUTCDay(), column: Math.floor(slot / 7) };
-  });
-  const columns = Math.max(1, ...positions.map((position: any) => position.column + 1));
-  const width = left + columns * (cell + gap) + 8;
-  const height = top + 7 * (cell + gap) + 20;
-  const max = Math.max(1, ...data.map((item: any) => item.total));
+  const maxMonth = Math.max(1, ...monthRows.map((item) => item.total));
+  const selected = monthRows.find((item) => item.key === selectedMonth) ?? monthRows.at(-1)!;
+  const monthIndex = Number(selected.key.slice(5, 7)) - 1;
+  const daysInMonth = new Date(Date.UTC(selectedYear, monthIndex + 1, 0)).getUTCDate();
+  const firstWeekday = new Date(Date.UTC(selectedYear, monthIndex, 1)).getUTCDay();
+  const daySlots: Array<{ date: string; total: number } | null> = [
+    ...Array.from({ length: firstWeekday }, () => null),
+    ...Array.from({ length: daysInMonth }, (_, index) => {
+      const date = `${selected.key}-${String(index + 1).padStart(2, '0')}`;
+      return { date, total: counts.get(date) ?? 0 };
+    }),
+  ];
+  const maxDay = Math.max(1, ...daySlots.map((item) => item?.total ?? 0));
   const colors = [
     'var(--color-heat-0)',
     'var(--color-heat-1)',
@@ -364,22 +431,23 @@ function HeatMap({ data, basis, setBasis, openDate }: any) {
     'var(--color-heat-4)',
   ];
   const color = (value: number) =>
-    colors[value === max ? 4 : Math.min(3, Math.ceil((value / max) * 4))];
-  const months = dates.reduce<{ key: string; label: string; column: number }[]>(
-    (items, date, index) => {
-      const label = date.toLocaleString('en', { month: 'short', timeZone: 'UTC' });
-      const key = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
-      const column = positions[index]?.column ?? 0;
-      if (!items.some((item) => item.key === key)) items.push({ key, label, column });
-      return items;
-    },
-    [],
-  );
+    colors[value === maxDay ? 4 : Math.min(3, Math.ceil((value / maxDay) * 4))];
+  const chooseYear = (year: number) => {
+    setSelectedYear(year);
+    const latestMonth = Array.from(archive.keys())
+      .filter((key) => key.startsWith(`${year}-`))
+      .sort()
+      .at(-1);
+    if (latestMonth) setSelectedMonth(latestMonth);
+  };
 
   return (
-    <section id="activity" className="panel timeseries-panel">
+    <section id="activity" className="panel timeseries-panel archive-panel">
       <div className="panel-heading">
-        <h2 className="section-label">Indicator activity</h2>
+        <div>
+          <h2 className="section-label">Temporal archive</h2>
+          <p className="archive-note">year / month files → day cells → matching IOC rows</p>
+        </div>
         <div className="chart-controls">
           <label>
             basis{' '}
@@ -390,58 +458,81 @@ function HeatMap({ data, basis, setBasis, openDate }: any) {
           </label>
         </div>
       </div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        aria-label="Indicator activity heat map"
-        className="heatmap-svg"
-      >
-        {months.map((month) => (
-          <text key={month.key} x={left + month.column * (cell + gap)} y="12">
-            {month.label}
-          </text>
+      <div className="archive-years" aria-label="Archive years">
+        {years.map((item) => (
+          <button
+            key={item.year}
+            className={item.year === selectedYear ? 'selected' : ''}
+            onClick={() => chooseYear(item.year)}
+            aria-pressed={item.year === selectedYear}
+          >
+            <b>{item.year}</b>
+            <span>{item.total.toLocaleString()} IOC</span>
+          </button>
         ))}
-        {[
-          [1, 'Mon'],
-          [3, 'Wed'],
-          [5, 'Fri'],
-        ].map(([row, label]) => (
-          <text key={label} x="0" y={top + Number(row) * (cell + gap) + 10}>
-            {label}
-          </text>
-        ))}
-        {dates.map((date: Date, index: number) => {
-          const dateValue = date.toISOString().slice(0, 10);
-          const total = counts.get(dateValue) ?? 0;
-          return (
-            <rect
-              key={dateValue}
-              x={left + positions[index].column * (cell + gap)}
-              y={top + positions[index].row * (cell + gap)}
-              width={cell}
-              height={cell}
-              fill={color(total)}
-              stroke="var(--color-border)"
-              tabIndex={0}
-              onClick={() => openDate(dateValue)}
+      </div>
+      <div className="archive-workspace">
+        <div className="archive-months" aria-label={`Months in ${selectedYear}`}>
+          {monthRows.map((month) => (
+            <button
+              key={month.key}
+              className={month.key === selectedMonth ? 'archive-file selected' : 'archive-file'}
+              onClick={() => setSelectedMonth(month.key)}
+              aria-pressed={month.key === selectedMonth}
+              disabled={month.total === 0}
             >
-              <title>
-                {dateValue}: {total} indicators
-              </title>
-            </rect>
-          );
-        })}
-      </svg>
-      <div className="heatmap-legend">
-        <span>less</span>
-        {colors.map((item) => (
-          <i key={item} style={{ background: item }} />
-        ))}
-        <span>more</span>
-        <small>
-          {dates[0].toISOString().slice(0, 10)} — {dates.at(-1)?.toISOString().slice(0, 10)} · click
-          a cell to filter
-        </small>
+              <span className="archive-file-index">{month.number}</span>
+              <b>{month.label}</b>
+              <span className="archive-file-bar">
+                <i style={{ width: `${(month.total / maxMonth) * 100}%` }} />
+              </span>
+              <span>{month.activeDays}d</span>
+              <strong>{month.total.toLocaleString()}</strong>
+            </button>
+          ))}
+        </div>
+        <div className="archive-days">
+          <div className="archive-days-heading">
+            <div>
+              <span>{selected.key}</span>
+              <strong>{selected.total.toLocaleString()} indicators</strong>
+            </div>
+            {selectedDate && (
+              <button onClick={clearDate}>clear day filter</button>
+            )}
+          </div>
+          <div className="archive-calendar">
+            <div className="archive-weekdays" aria-hidden="true">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                <span key={day}>{day}</span>
+              ))}
+            </div>
+            <div className="archive-day-grid" aria-label={`${selected.key} daily IOC heat map`}>
+              {daySlots.map((item, index) =>
+                item ? (
+                  <button
+                    key={item.date}
+                    className={item.date === selectedDate ? 'selected' : ''}
+                    style={{ backgroundColor: color(item.total) }}
+                    onClick={() => openDate(item.date)}
+                    aria-label={`${item.date}: ${item.total} indicators`}
+                    title={`${item.date}: ${item.total.toLocaleString()} indicators`}
+                  />
+                ) : (
+                  <i key={`empty-${index}`} />
+                ),
+              )}
+            </div>
+          </div>
+          <div className="heatmap-legend">
+            <span>less</span>
+            {colors.map((item) => (
+              <i key={item} style={{ background: item }} />
+            ))}
+            <span>more</span>
+            <small>click a day to filter the IOC table</small>
+          </div>
+        </div>
       </div>
     </section>
   );
