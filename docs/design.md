@@ -29,14 +29,14 @@ JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Sec
 - Buttons are transparent with a 1px border. The primary action is light text color on the dark text color inverse.
 - Inputs use a 1px border and a 1px accent focus outline.
 - Tables have hairline row dividers, no zebra striping, and surface-color hover.
-- Transitions are limited to 100ms color, opacity, background, and border changes. The explorer additionally permits a 320ms count update, a 160ms drawer entrance, a 320ms year-file hover transform, and a 260ms one-time year opening.
+- Transitions are limited to 100ms color, opacity, background, and border changes. The explorer additionally permits a 320ms count update, a 160ms drawer entrance, and a 280ms hover transform on a closed file's decorative surface. File click areas and open heatmaps never transform.
 - Respect `prefers-reduced-motion`.
 
 ## Data visualization
 
 - Graph nodes are neutral flat shapes. Type is conveyed by shape, malicious by a red outline, and selection by the accent outline. No particles, glow, pulse, or persistent labels.
 - Explorer dimensions use sorted neutral bar tables, and every row is both filterable and inspectable.
-- Time activity is a temporal archive: overlapping year files are ordered oldest/back to newest/front, with quarter-staggered connected tabs. No file opens by default. Hovering one closed file dims its siblings and moves it forward with a smooth 320ms perspective transform. When a file is open, the other files stay still and dimmed. Clicking a year opens one full-year, seven-row daily heatmap with month labels. Clicking a day shows its IOC records inside the file, with pagination and links to each IOC. Populated days use five neutral levels based on that year's count quantiles; zero days use the darkest step and only the busiest tenth use the accent.
+- Time activity is a temporal archive: year files are ordered oldest/back to newest/front. There are no tabs; the year sits on the right of each file, and the entire closed file is a button. No file opens by default. Hover moves only the decorative surface and dims siblings; click areas and stacking order stay fixed. Opening a file separates it from its neighbours in normal document flow. When a file is open, other files stay still and dimmed. The open file contains a full-year, seven-row daily heatmap with month labels and a fixed-size IOC list area, so day selection, loading, pagination, and clearing do not move the stack. Use the full-width header to close it. Populated days use five neutral levels based on that year's count quantiles; zero days use the darkest step and only the busiest tenth use the accent.
 - Geo uses a flat equirectangular SVG with unfilled country outlines and 3px semantic dots.
 - Timeline is a native range input over a 1px ticked baseline.
 

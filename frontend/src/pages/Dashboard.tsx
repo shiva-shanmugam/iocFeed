@@ -491,28 +491,28 @@ function TemporalArchive({
               <article
                 key={item.year}
                 className={isOpen ? 'archive-folder selected' : 'archive-folder'}
-                style={{ '--folder-index': index, '--tab-slot': index % 4 } as React.CSSProperties}
+                style={{ '--folder-index': index } as React.CSSProperties}
+                data-year={item.year}
               >
-                <button
-                  className="archive-folder-tab"
-                  onClick={() => chooseYear(item.year)}
-                  aria-expanded={isOpen}
-                  aria-label={`${item.year}: ${item.total.toLocaleString()} indicators`}
-                >
-                  {item.year}
-                </button>
                 <div className="archive-folder-face">
-                  <div className="archive-folder-meta">
-                    <strong>{item.total.toLocaleString()} IOC</strong>
-                    <small>
-                      {item.year} / {basis.replace('_', ' ')}
-                    </small>
-                  </div>
-                  <span className="archive-folder-state">
-                    {isOpen ? 'close file' : 'open file'}
-                  </span>
+                  <button
+                    className="archive-file-toggle"
+                    onClick={() => chooseYear(item.year)}
+                    aria-expanded={isOpen}
+                    aria-controls={`archive-year-${item.year}`}
+                    aria-label={`${isOpen ? 'Close' : 'Open'} ${item.year} file: ${item.total.toLocaleString()} indicators`}
+                  >
+                    <span className="archive-folder-meta">
+                      <strong>{item.total.toLocaleString()} IOC</strong>
+                      <small>{basis.replace('_', ' ')}</small>
+                    </span>
+                    <span className="archive-folder-year">
+                      <strong>{item.year}</strong>
+                      <small>{isOpen ? 'close file' : 'open file'}</small>
+                    </span>
+                  </button>
                   {isOpen && (
-                    <div className="archive-folder-drawer">
+                    <div className="archive-folder-drawer" id={`archive-year-${item.year}`}>
                       <div className="archive-drawer-heading">
                         <span>activity / {item.year}</span>
                         <small>each square is a day; select one for IOC records</small>
@@ -555,43 +555,53 @@ function TemporalArchive({
                         ))}
                         <span>more</span>
                       </div>
-                      {selectedDate && selectedDate.startsWith(`${item.year}-`) && (
-                        <div className="archive-results">
-                          <div className="archive-results-heading">
-                            <strong>{selectedDate} / IOC records</strong>
-                            <button onClick={clearDate}>clear day filter</button>
-                          </div>
-                          <div className="archive-results-scroll">
-                            {!rows && <p>Loading IOC records…</p>}
-                            {rows?.items.map((row) => (
-                              <button
-                                key={row.id}
-                                className="archive-result"
-                                onClick={() => openIOC(row.id)}
-                              >
-                                <span>{row.type}</span>
-                                <span>{row.value}</span>
-                                <span className={`verdict-${row.verdict}`}>{row.verdict}</span>
+                      <div className="archive-results" aria-live="polite">
+                        {selectedDate && selectedDate.startsWith(`${item.year}-`) ? (
+                          <>
+                            <div className="archive-results-heading">
+                              <strong>{selectedDate} / IOC records</strong>
+                              <button onClick={clearDate}>clear day filter</button>
+                            </div>
+                            <div className="archive-results-scroll">
+                              {!rows && <p>Loading IOC records…</p>}
+                              {rows?.items.map((row) => (
+                                <button
+                                  key={row.id}
+                                  className="archive-result"
+                                  onClick={() => openIOC(row.id)}
+                                >
+                                  <span>{row.type}</span>
+                                  <span>{row.value}</span>
+                                  <span className={`verdict-${row.verdict}`}>{row.verdict}</span>
+                                </button>
+                              ))}
+                              {rows && rows.items.length === 0 && (
+                                <p>No matching IOCs on this day.</p>
+                              )}
+                            </div>
+                            <div className="archive-results-page">
+                              <span>
+                                {rows
+                                  ? `${rows.total.toLocaleString()} IOCs · page ${page} / ${totalPages}`
+                                  : 'Loading IOC records…'}
+                              </span>
+                              <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                                previous
                               </button>
-                            ))}
-                            {rows && rows.items.length === 0 && (
-                              <p>No matching IOCs on this day.</p>
-                            )}
-                          </div>
-                          <div className="archive-results-page">
-                            <span>
-                              {(rows?.total ?? 0).toLocaleString()} IOCs · page {page} /{' '}
-                              {totalPages}
-                            </span>
-                            <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                              previous
-                            </button>
-                            <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                              next
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                              <button
+                                disabled={page >= totalPages}
+                                onClick={() => setPage(page + 1)}
+                              >
+                                next
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="archive-results-prompt">
+                            Select a day to inspect its IOC records.
+                          </p>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>

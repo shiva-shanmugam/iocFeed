@@ -17,33 +17,40 @@ try {
   await page.locator('.indicators-panel tbody tr').first().waitFor();
   check((await page.locator('.archive-folder').count()) >= 3, 'Temporal archive year files');
   check((await page.locator('.archive-folder.selected').count()) === 0, 'No year open by default');
+  check((await page.locator('.archive-folder-tab').count()) === 0, 'Year files have no tabs');
   await page.screenshot({ path: 'artifacts/functionality/explore-default.png', fullPage: false });
   const folder = page.locator('.archive-folder').nth(2);
-  const folderTab = folder.locator('.archive-folder-tab');
+  const fileButton = folder.locator('.archive-file-toggle');
   const otherFolder = page.locator('.archive-folder').first();
   const restingTransform = await folder.evaluate(
-    (element) => element.ownerDocument.defaultView.getComputedStyle(element).transform,
+    (element) =>
+      getComputedStyle(element.querySelector('.archive-folder-face'), '::before').transform,
   );
-  await folderTab.hover();
-  await page.waitForTimeout(250);
+  await fileButton.hover({ position: { x: 24, y: 16 } });
+  await page.waitForTimeout(300);
   const hoverTransform = await folder.evaluate(
-    (element) => element.ownerDocument.defaultView.getComputedStyle(element).transform,
+    (element) =>
+      getComputedStyle(element.querySelector('.archive-folder-face'), '::before').transform,
   );
-  check(restingTransform !== hoverTransform, 'Year file lifts forward on hover');
+  check(restingTransform !== hoverTransform, 'File surface lifts with a fixed click area');
   const dimmedOpacity = await otherFolder.evaluate(
     (element) => element.ownerDocument.defaultView.getComputedStyle(element).opacity,
   );
   check(Number(dimmedOpacity) < 0.7, 'Other year files dim during hover');
   await page.screenshot({ path: 'artifacts/functionality/explore-folder-hover.png' });
   await page.mouse.move(1, 1);
-  await page.locator('.archive-folder').first().locator('.archive-folder-tab').click();
+  await page
+    .locator('.archive-folder')
+    .first()
+    .locator('.archive-file-toggle')
+    .click({ position: { x: 24, y: 16 } });
   check(
     (await page
       .locator('.archive-folder')
       .first()
-      .locator('.archive-folder-tab')
+      .locator('.archive-file-toggle')
       .getAttribute('aria-expanded')) === 'true',
-    'Archive year drill-down',
+    'Clicking the file body opens its year',
   );
   check(
     (await page.locator('.archive-year-grid button').count()) >= 365,
@@ -51,11 +58,15 @@ try {
   );
   await page.waitForTimeout(350);
   const inactiveFolder = page.locator('.archive-folder:not(.selected)').last();
-  await inactiveFolder.locator('.archive-folder-tab').hover();
+  await inactiveFolder.locator('.archive-file-toggle').hover({ position: { x: 24, y: 16 } });
   await page.waitForTimeout(350);
   check(
-    Number(await inactiveFolder.evaluate((element) => getComputedStyle(element).zIndex)) < 40,
-    'Other files stay behind while a year is open',
+    await inactiveFolder.evaluate(
+      (element) =>
+        getComputedStyle(element.querySelector('.archive-folder-face'), '::before').transform ===
+        'none',
+    ),
+    'Other files stay still while a year is open',
   );
   const shadeCount = await page
     .locator('.archive-year-grid button')
@@ -70,13 +81,11 @@ try {
   await populatedDay.click();
   await page.locator('.archive-result').first().waitFor();
   check(
-    (await page.locator('.archive-folder.selected').count()) === 1 &&
-      (await page
-        .locator('.archive-folder:not(.selected)')
-        .evaluateAll((folders) =>
-          folders.every((folder) => Number(getComputedStyle(folder).zIndex) < 40),
-        )),
-    'Day click keeps the open file in front',
+    await populatedDay.evaluate((cell) => {
+      const rect = cell.getBoundingClientRect();
+      return document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2) === cell;
+    }),
+    'Day cell remains clickable without another file covering it',
   );
   await page.waitForTimeout(350);
   await page.screenshot({ path: 'artifacts/functionality/explore-day.png', fullPage: false });

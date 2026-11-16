@@ -221,17 +221,16 @@ input[type='range'] {
   margin-bottom: 8px;
 }
 .filter-selects {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(124px, 1fr));
   gap: 4px;
-  flex-wrap: wrap;
 }
 .filter-selects .field {
+  width: 100%;
+  height: 28px;
   padding: 4px 6px;
-  min-width: 94px;
+  min-width: 0;
   font-size: 11px;
-}
-.filter-selects .date-field {
-  width: 132px;
 }
 .filter-chips {
   display: flex;
@@ -304,119 +303,115 @@ input[type='range'] {
 .archive-stack {
   width: min(980px, calc(100% - 32px));
   margin: 0 auto;
-  padding: 22px 24px 18px;
-  perspective: 820px;
-  perspective-origin: 50% 10%;
+  padding: 20px 24px;
+  isolation: isolate;
 }
 .archive-folder {
   position: relative;
   z-index: calc(var(--folder-index) + 1);
-  display: block;
   width: 86%;
-  height: 92px;
-  margin: -48px auto 0;
-  padding: 22px 0 0;
-  border: 0;
-  background: transparent;
+  margin: -12px auto 0;
   color: var(--color-text-secondary);
-  text-align: left;
-  transform: rotateX(5deg) translateZ(calc(var(--folder-index) * 2px));
-  transform-origin: center bottom;
-  transform-style: preserve-3d;
-  transition:
-    transform 320ms cubic-bezier(0.2, 0.75, 0.25, 1),
-    color 100ms linear,
-    opacity 240ms ease-out;
+  transition: opacity 180ms ease-out;
 }
 .archive-folder:first-child {
   margin-top: 0;
 }
-.archive-stack:not(:has(.archive-folder.selected)):has(.archive-folder:hover)
-  .archive-folder:not(:hover),
-.archive-stack:has(.archive-folder.selected) .archive-folder:not(.selected) {
-  opacity: 0.55;
-}
-.archive-folder.selected {
-  z-index: 40;
-  height: 437px;
-  transform: none;
-}
-.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover,
-.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:focus-visible {
-  z-index: 50;
-  color: var(--color-text);
-  transform: rotateX(1deg) translate3d(0, -15px, 48px);
-}
-.archive-folder-tab {
-  position: absolute;
-  z-index: 2;
-  top: 0;
-  left: calc(var(--tab-slot) * 25%);
-  display: grid;
-  place-items: center;
-  width: 25%;
-  height: 24px;
-  border: 1px solid var(--color-border);
-  border-bottom-color: var(--color-heat-0);
-  border-radius: 2px 2px 0 0;
-  background: var(--color-heat-0);
-  color: var(--color-text);
-  font-weight: 600;
-}
 .archive-folder-face {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) 72px;
-  align-items: center;
-  gap: 12px;
-  height: 70px;
+  isolation: isolate;
+}
+.archive-folder-face::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
   border: 1px solid var(--color-border);
-  border-left: 2px solid var(--color-border);
-  border-radius: 0 2px 2px;
+  border-radius: 2px;
   background: var(--color-heat-0);
-  padding: 8px 10px;
+  pointer-events: none;
+  transform-origin: center bottom;
+  transition:
+    transform 280ms cubic-bezier(0.2, 0.75, 0.25, 1),
+    border-color 100ms linear;
 }
-.archive-folder.selected .archive-folder-face {
-  height: 415px;
-  align-content: start;
-}
-.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover .archive-folder-face,
-.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover .archive-folder-tab,
-.archive-stack:not(:has(.archive-folder.selected))
-  .archive-folder:focus-visible
-  .archive-folder-face,
-.archive-stack:not(:has(.archive-folder.selected))
-  .archive-folder:focus-visible
-  .archive-folder-tab,
-.archive-folder.selected .archive-folder-face,
-.archive-folder.selected .archive-folder-tab {
-  border-color: var(--color-accent);
-}
-.archive-folder.selected .archive-folder-tab {
-  border-bottom-color: var(--color-heat-0);
-}
-.archive-folder-meta {
-  display: grid;
-}
-.archive-folder-meta strong {
+.archive-file-toggle {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 68px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   color: var(--color-text);
-  font-size: 11px;
+  padding: 12px 16px 20px;
+  text-align: left;
+  cursor: pointer;
 }
-.archive-folder-meta small,
-.archive-folder-state {
+.archive-file-toggle:hover {
+  background: transparent;
+}
+.archive-file-toggle > span {
+  display: grid;
+  gap: 2px;
+  pointer-events: none;
+  transition: transform 280ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+.archive-file-toggle strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.archive-file-toggle small {
   color: var(--color-text-disabled);
-  font-size: 8px;
+  font-size: 9px;
   text-transform: uppercase;
 }
-.archive-folder-state {
-  justify-self: end;
+.archive-folder-year {
+  text-align: right;
+}
+.archive-folder-year strong {
+  font-size: 13px;
+}
+.archive-stack:not(:has(.selected)):has(.archive-file-toggle:hover) .archive-folder:not(:hover),
+.archive-stack:has(.selected) .archive-folder:not(.selected) {
+  opacity: 0.55;
+}
+/* Only the decorative sheet moves; the button and its click area stay fixed. */
+.archive-stack:not(:has(.selected))
+  .archive-folder:has(.archive-file-toggle:hover)
+  .archive-folder-face::before,
+.archive-stack:not(:has(.selected))
+  .archive-folder:has(.archive-file-toggle:focus-visible)
+  .archive-folder-face::before {
+  border-color: var(--color-accent);
+  transform: perspective(820px) rotateX(2deg) translateY(-6px);
+}
+.archive-stack:not(:has(.selected)) .archive-file-toggle:hover > span,
+.archive-stack:not(:has(.selected)) .archive-file-toggle:focus-visible > span {
+  transform: translateY(-6px);
+}
+.archive-folder.selected {
+  margin-top: 12px;
+}
+.archive-folder.selected:first-child {
+  margin-top: 0;
+}
+.archive-folder.selected + .archive-folder {
+  margin-top: 12px;
+}
+.archive-folder.selected .archive-folder-face::before {
+  border-color: var(--color-accent);
+}
+.archive-folder.selected .archive-file-toggle {
+  padding-bottom: 12px;
 }
 .archive-folder-drawer {
-  grid-column: 1 / -1;
   min-width: 0;
-  margin-top: 4px;
+  margin: 0 12px;
   border-top: 1px solid var(--color-border);
-  padding-top: 6px;
+  padding: 8px 0 12px;
 }
 .archive-drawer-heading {
   display: flex;
@@ -451,28 +446,6 @@ input[type='range'] {
 }
 .heatmap-legend small {
   margin-left: 12px;
-}
-.archive-folder.selected,
-.archive-folder.selected .archive-folder-face {
-  height: auto;
-}
-.archive-folder.selected .archive-folder-face {
-  min-height: 260px;
-  align-content: start;
-}
-.archive-folder-drawer {
-  width: 100%;
-  animation: archive-open 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
-}
-@keyframes archive-open {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 .archive-year-calendar {
   max-width: 100%;
@@ -514,6 +487,7 @@ input[type='range'] {
   outline-offset: 1px;
 }
 .archive-results {
+  height: 344px;
   margin-top: 12px;
   border-top: 1px solid var(--color-border);
 }
@@ -522,7 +496,14 @@ input[type='range'] {
   display: flex;
   align-items: center;
   gap: 8px;
+  height: 40px;
   padding: 8px 0;
+}
+.archive-results-prompt {
+  margin: 0;
+  padding: 12px 0;
+  color: var(--color-text-secondary);
+  font-size: 11px;
 }
 .archive-results-heading button {
   margin-left: auto;
@@ -541,7 +522,7 @@ input[type='range'] {
   font-size: 10px;
 }
 .archive-results-scroll {
-  max-height: 288px;
+  height: 264px;
   overflow-y: auto;
 }
 .archive-result {
@@ -1249,25 +1230,18 @@ input[type='range'] {
   .chart-controls {
     gap: 4px;
   }
+  .archive-stack {
+    width: 100%;
+    padding-inline: 8px;
+  }
   .archive-folder {
-    width: 70%;
+    width: 100%;
   }
-  .archive-folder.selected {
-    height: auto;
-    transform: none;
+  .archive-file-toggle {
+    padding-inline: 12px;
   }
-  .archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover,
-  .archive-stack:not(:has(.archive-folder.selected)) .archive-folder:focus-visible {
-    transform: rotateX(1deg) translate3d(0, -10px, 16px);
-  }
-  .archive-folder-face {
-    grid-template-columns: 120px minmax(270px, 1fr);
-  }
-  .archive-folder.selected .archive-folder-face {
-    height: auto;
-  }
-  .archive-folder-state {
-    display: none;
+  .archive-results-page {
+    gap: 4px;
   }
 }
 
