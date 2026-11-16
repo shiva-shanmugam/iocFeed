@@ -50,12 +50,34 @@ try {
     'Open year contains daily heat map',
   );
   await page.waitForTimeout(350);
+  const inactiveFolder = page.locator('.archive-folder:not(.selected)').last();
+  await inactiveFolder.locator('.archive-folder-tab').hover();
+  await page.waitForTimeout(350);
+  check(
+    Number(await inactiveFolder.evaluate((element) => getComputedStyle(element).zIndex)) < 40,
+    'Other files stay behind while a year is open',
+  );
+  const shadeCount = await page
+    .locator('.archive-year-grid button')
+    .evaluateAll(
+      (cells) => new Set(cells.map((cell) => getComputedStyle(cell).backgroundColor)).size,
+    );
+  check(shadeCount >= 6, 'Daily heatmap shows varied shades', `${shadeCount} levels`);
   const populatedDay = page
     .locator('.archive-year-grid button:not([aria-label$=": 0 indicators"])')
     .first();
   report.details.selectedDay = await populatedDay.getAttribute('aria-label');
   await populatedDay.click();
   await page.locator('.archive-result').first().waitFor();
+  check(
+    (await page.locator('.archive-folder.selected').count()) === 1 &&
+      (await page
+        .locator('.archive-folder:not(.selected)')
+        .evaluateAll((folders) =>
+          folders.every((folder) => Number(getComputedStyle(folder).zIndex) < 40),
+        )),
+    'Day click keeps the open file in front',
+  );
   await page.waitForTimeout(350);
   await page.screenshot({ path: 'artifacts/functionality/explore-day.png', fullPage: false });
   check(page.url().includes('date_from='), 'Archive day filters IOC rows');

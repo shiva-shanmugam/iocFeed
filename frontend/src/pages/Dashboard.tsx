@@ -370,6 +370,8 @@ const HEAT_COLORS = [
   'var(--color-heat-2)',
   'var(--color-heat-3)',
   'var(--color-heat-4)',
+  'var(--color-heat-5)',
+  'var(--color-heat-6)',
 ];
 
 function TemporalArchive({
@@ -424,7 +426,18 @@ function TemporalArchive({
         }),
       ]
     : [];
-  const max = Math.max(1, ...slots.map((item) => item?.total ?? 0));
+  const activeCounts = slots
+    .filter((item): item is NonNullable<typeof item> => item !== null && item.total > 0)
+    .map((item) => item.total)
+    .sort((a, b) => a - b);
+  const thresholds = [0.18, 0.36, 0.54, 0.72, 0.9].map(
+    (rank) => activeCounts[Math.floor((activeCounts.length - 1) * rank)] ?? 0,
+  );
+  const heatLevel = (total: number) => {
+    if (total === 0) return 0;
+    const bucket = thresholds.findIndex((threshold) => total <= threshold);
+    return bucket === -1 ? HEAT_COLORS.length - 1 : bucket + 1;
+  };
   const monthLabels = slots.reduce<{ name: string; column: number }[]>((labels, item, index) => {
     if (item && (index === 0 || item.date.endsWith('-01'))) {
       labels.push({
@@ -523,12 +536,7 @@ function TemporalArchive({
                                 key={cell.date}
                                 className={selectedDate === cell.date ? 'selected' : ''}
                                 style={{
-                                  backgroundColor:
-                                    HEAT_COLORS[
-                                      cell.total === max
-                                        ? 4
-                                        : Math.min(3, Math.ceil((cell.total / max) * 4))
-                                    ],
+                                  backgroundColor: HEAT_COLORS[heatLevel(cell.total)],
                                 }}
                                 onClick={() => openDate(cell.date)}
                                 aria-label={`${cell.date}: ${cell.total} indicators`}

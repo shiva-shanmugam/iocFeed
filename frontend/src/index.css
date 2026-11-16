@@ -14,10 +14,12 @@
   --color-suspicious: #c69026;
   --color-bar: #3a3a3d;
   --color-heat-0: #181819;
-  --color-heat-1: #232325;
-  --color-heat-2: #303033;
-  --color-heat-3: #444448;
-  --color-heat-4: #7aa2f7;
+  --color-heat-1: #29292c;
+  --color-heat-2: #39393d;
+  --color-heat-3: #4a4a50;
+  --color-heat-4: #5b5b62;
+  --color-heat-5: #707078;
+  --color-heat-6: #7aa2f7;
   --sidebar-width: 184px;
   --status-height: 28px;
   font-family: 'JetBrains Mono', monospace;
@@ -329,7 +331,9 @@ input[type='range'] {
 .archive-folder:first-child {
   margin-top: 0;
 }
-.archive-stack:has(.archive-folder:hover) .archive-folder:not(:hover) {
+.archive-stack:not(:has(.archive-folder.selected)):has(.archive-folder:hover)
+  .archive-folder:not(:hover),
+.archive-stack:has(.archive-folder.selected) .archive-folder:not(.selected) {
   opacity: 0.55;
 }
 .archive-folder.selected {
@@ -337,8 +341,8 @@ input[type='range'] {
   height: 437px;
   transform: none;
 }
-.archive-folder:hover:not(.selected),
-.archive-folder:focus-visible:not(.selected) {
+.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover,
+.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:focus-visible {
   z-index: 50;
   color: var(--color-text);
   transform: rotateX(1deg) translate3d(0, -15px, 48px);
@@ -376,10 +380,14 @@ input[type='range'] {
   height: 415px;
   align-content: start;
 }
-.archive-folder:hover .archive-folder-face,
-.archive-folder:hover .archive-folder-tab,
-.archive-folder:focus-visible .archive-folder-face,
-.archive-folder:focus-visible .archive-folder-tab,
+.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover .archive-folder-face,
+.archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover .archive-folder-tab,
+.archive-stack:not(:has(.archive-folder.selected))
+  .archive-folder:focus-visible
+  .archive-folder-face,
+.archive-stack:not(:has(.archive-folder.selected))
+  .archive-folder:focus-visible
+  .archive-folder-tab,
 .archive-folder.selected .archive-folder-face,
 .archive-folder.selected .archive-folder-tab {
   border-color: var(--color-accent);
@@ -1135,7 +1143,7 @@ input[type='range'] {
   background: var(--color-heat-3);
 }
 .activity-strip i[data-level='4'] {
-  background: var(--color-heat-4);
+  background: var(--color-heat-6);
 }
 .collection-table {
   padding: 0;
@@ -1248,8 +1256,8 @@ input[type='range'] {
     height: auto;
     transform: none;
   }
-  .archive-folder:hover:not(.selected),
-  .archive-folder:focus-visible:not(.selected) {
+  .archive-stack:not(:has(.archive-folder.selected)) .archive-folder:hover,
+  .archive-stack:not(:has(.archive-folder.selected)) .archive-folder:focus-visible {
     transform: rotateX(1deg) translate3d(0, -10px, 16px);
   }
   .archive-folder-face {

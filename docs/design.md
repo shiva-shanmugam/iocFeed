@@ -18,7 +18,7 @@ The canonical tokens live as CSS variables in `frontend/src/index.css`. Tailwind
 | `--color-malicious`      | `#e5534b`        | malicious text or 2px rule only          |
 | `--color-suspicious`     | `#c69026`        | suspicious text or 2px rule only         |
 | `--color-bar`            | `#3a3a3d`        | neutral data bars and map outlines       |
-| `--color-heat-0..4`      | five fixed steps | temporal archive day-cell scale          |
+| `--color-heat-0..6`      | seven fixed steps | six neutral levels and a highest-bucket accent |
 
 JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Section headings are 11px uppercase secondary text or 600 weight. Spacing follows a 4px scale. Corner radius is at most 2px; tables have square corners.
 
@@ -36,7 +36,7 @@ JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Sec
 
 - Graph nodes are neutral flat shapes. Type is conveyed by shape, malicious by a red outline, and selection by the accent outline. No particles, glow, pulse, or persistent labels.
 - Explorer dimensions use sorted neutral bar tables, and every row is both filterable and inspectable.
-- Time activity is a temporal archive: overlapping year files are ordered oldest/back to newest/front, with quarter-staggered connected tabs. No file opens by default. Hovering one file dims its siblings and moves it forward with a smooth 320ms perspective transform. Clicking a year opens one full-year, seven-row daily heatmap with month labels. Clicking a day shows its IOC records inside the file, with pagination and links to each IOC. Cells use four grey intensity steps, with the accent reserved for the highest bucket.
+- Time activity is a temporal archive: overlapping year files are ordered oldest/back to newest/front, with quarter-staggered connected tabs. No file opens by default. Hovering one closed file dims its siblings and moves it forward with a smooth 320ms perspective transform. When a file is open, the other files stay still and dimmed. Clicking a year opens one full-year, seven-row daily heatmap with month labels. Clicking a day shows its IOC records inside the file, with pagination and links to each IOC. Populated days use five neutral levels based on that year's count quantiles; zero days use the darkest step and only the busiest tenth use the accent.
 - Geo uses a flat equirectangular SVG with unfilled country outlines and 3px semantic dots.
 - Timeline is a native range input over a 1px ticked baseline.
 

@@ -21,7 +21,7 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 
 ## Checks passed
 
-- Atlas: four overlapping year files with staggered tabs, sibling dimming, no file open by default, and a full-year GitHub-style daily heatmap with month markers in the opened file; clicking a day reveals the IOC list inside that file. The audit also checked six exploration lenses, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
+- Atlas: four overlapping year files with staggered tabs, sibling dimming, no file open by default, and a full-year GitHub-style daily heatmap with month markers in the opened file; clicking a day reveals the IOC list inside that file. The audit confirmed that other year files stay behind while one is open and that the daily grid displays seven distinct levels. It also checked six exploration lenses, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
 - Collections: permanent family/type/source/actor/tag/country/ASN routes, activity strip, contextual pivots, indicator table, and Atlas handoff.
 - IOC records: explainable disposition, confidence factors, classification, explicit relationships, metadata pivots, graph handoff, and raw observations.
 - Evidence: one locally rendered page per IOC/source observation, normalized fields, raw JSON, attribution, and upstream link handling.
@@ -34,4 +34,4 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 - APIs: health, summary, facets, time series, indicator rows, entity collections, detailed IOC records, source evidence, graph, graph expansion, graph path, geo points, timeline, ingestion log, and CSV/JSON/blocklist exports.
 - Browser: no console errors during the complete flow.
 
-The automated audit recorded 54 passing checks and zero failures. Backend tests (15 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), ESLint, TypeScript, and the production build also pass. PostgreSQL and the API both confirmed 310,000 stored IOCs; a last-seen day with two stored IOCs returned two API records. The scheduled ingestion worker is stopped and excluded from default Compose startup.
+The automated audit recorded 57 passing checks and zero failures. Backend tests (15 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), ESLint, TypeScript, and the production build also pass. PostgreSQL and the API both confirmed 310,000 stored IOCs; a last-seen day with two stored IOCs returned two API records. The scheduled ingestion worker is stopped and excluded from default Compose startup.
