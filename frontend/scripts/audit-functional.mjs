@@ -16,7 +16,8 @@ try {
   await page.goto(`${base}/`, { waitUntil: 'networkidle' });
   await page.locator('.indicators-panel tbody tr').first().waitFor();
   check((await page.locator('.archive-folder').count()) >= 3, 'Temporal archive year files');
-  check((await page.locator('.archive-mini-cell').count()) === 0, 'Closed year files stay quiet');
+  check((await page.locator('.archive-folder.selected').count()) === 0, 'No year open by default');
+  await page.screenshot({ path: 'artifacts/functionality/explore-default.png', fullPage: false });
   const folder = page.locator('.archive-folder').nth(2);
   const folderTab = folder.locator('.archive-folder-tab');
   const otherFolder = page.locator('.archive-folder').first();
@@ -35,14 +36,6 @@ try {
   check(Number(dimmedOpacity) < 0.7, 'Other year files dim during hover');
   await page.screenshot({ path: 'artifacts/functionality/explore-folder-hover.png' });
   await page.mouse.move(1, 1);
-  check(
-    (await page.locator('.archive-folder.selected .archive-file').count()) === 12,
-    'Open year contains month files',
-  );
-  check(
-    (await page.locator('.archive-folder.selected .archive-day-grid button').count()) >= 28,
-    'Open month contains day heat map',
-  );
   await page.locator('.archive-folder').first().locator('.archive-folder-tab').click();
   check(
     (await page
@@ -52,11 +45,21 @@ try {
       .getAttribute('aria-expanded')) === 'true',
     'Archive year drill-down',
   );
-  await page.locator('.archive-file:not(:disabled)').first().click();
-  await page.locator('.archive-day-grid button').first().click();
-  await page.locator('.entity-modal').waitFor();
+  check(
+    (await page.locator('.archive-year-grid button').count()) >= 365,
+    'Open year contains daily heat map',
+  );
+  await page.waitForTimeout(350);
+  const populatedDay = page
+    .locator('.archive-year-grid button:not([aria-label$=": 0 indicators"])')
+    .first();
+  report.details.selectedDay = await populatedDay.getAttribute('aria-label');
+  await populatedDay.click();
+  await page.locator('.archive-result').first().waitFor();
+  await page.waitForTimeout(350);
+  await page.screenshot({ path: 'artifacts/functionality/explore-day.png', fullPage: false });
   check(page.url().includes('date_from='), 'Archive day filters IOC rows');
-  await page.keyboard.press('Escape');
+  check((await page.locator('.archive-result').count()) > 0, 'Day reveals IOC list inline');
   await page.getByRole('button', { name: 'clear day filter' }).click();
   await page.waitForFunction(
     () => document.querySelectorAll('.indicators-panel tbody tr').length === 25,

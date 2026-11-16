@@ -1,6 +1,6 @@
 # Functional audit
 
-Audit date: 2026-11-16. The local Docker application was tested at 1440×900 with Playwright against 110,000 indicators after the temporal archive, graph, Atlas, permanent collection, IOC record, and source-evidence changes. The machine-readable result is in `frontend/artifacts/functionality/report.json`; screenshots are stored beside it.
+Audit date: 2026-11-17. The local Docker application was tested at 1440×900 with Playwright against 310,000 indicators after the archive and IOC data changes. The machine-readable result is in `frontend/artifacts/functionality/report.json`; screenshots are stored beside it, including the closed default archive, hover state, and open day IOC list.
 
 ## Relationship graph model
 
@@ -21,7 +21,7 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 
 ## Checks passed
 
-- Atlas: four overlapping year files with staggered tabs, sibling dimming, and an in-folder drill-down through 12 month files to GitHub-style daily heat cells; day-to-table filtering, six exploration lenses, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
+- Atlas: four overlapping year files with staggered tabs, sibling dimming, no file open by default, and a full-year GitHub-style daily heatmap with month markers in the opened file; clicking a day reveals the IOC list inside that file. The audit also checked six exploration lenses, IOC preview, Escape close, URL-backed facets, sorting, page size, and pagination.
 - Collections: permanent family/type/source/actor/tag/country/ASN routes, activity strip, contextual pivots, indicator table, and Atlas handoff.
 - IOC records: explainable disposition, confidence factors, classification, explicit relationships, metadata pivots, graph handoff, and raw observations.
 - Evidence: one locally rendered page per IOC/source observation, normalized fields, raw JSON, attribution, and upstream link handling.
@@ -34,4 +34,4 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 - APIs: health, summary, facets, time series, indicator rows, entity collections, detailed IOC records, source evidence, graph, graph expansion, graph path, geo points, timeline, ingestion log, and CSV/JSON/blocklist exports.
 - Browser: no console errors during the complete flow.
 
-The automated audit recorded 54 passing checks and zero failures. Backend tests (15 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), Ruff, ESLint, TypeScript, and the production build also pass.
+The automated audit recorded 54 passing checks and zero failures. Backend tests (15 passed, 3 integration tests skipped without their opt-in flag), frontend unit tests (4), ESLint, TypeScript, and the production build also pass. PostgreSQL and the API both confirmed 310,000 stored IOCs; a last-seen day with two stored IOCs returned two API records. The scheduled ingestion worker is stopped and excluded from default Compose startup.

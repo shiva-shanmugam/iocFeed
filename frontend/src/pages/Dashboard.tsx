@@ -28,6 +28,7 @@ function useCountUp(value = 0) {
 export function Dashboard() {
   const filters = useExploreFilters();
   const [contains, setContains] = useState(filters.params.get('contains') ?? '');
+  const containsInitialized = useRef(false);
   const [basis, setBasis] = useState('first_seen');
   const [sort, setSort] = useState('last_seen');
   const [order, setOrder] = useState('desc');
@@ -36,6 +37,8 @@ export function Dashboard() {
     const next = new URLSearchParams(filters.params);
     next.delete('modal');
     next.delete('page');
+    if (next.has('date_from') || next.has('date_to')) next.set('date_basis', basis);
+    else next.delete('date_basis');
     return next.toString();
   })();
   const seriesQuery = (() => {
@@ -47,6 +50,10 @@ export function Dashboard() {
     return next.toString();
   })();
   useEffect(() => {
+    if (!containsInitialized.current) {
+      containsInitialized.current = true;
+      return;
+    }
     const timer = window.setTimeout(() => filters.setOne('contains', contains || undefined), 250);
     return () => clearTimeout(timer);
     // setOne is derived from the current URL; typing is the only trigger for this debounce.
@@ -165,6 +172,10 @@ export function Dashboard() {
               : null
           }
           clearDate={filters.clearDates}
+          rows={rows.isFetching ? undefined : rows.data}
+          page={page}
+          setPage={filters.setPage}
+          openIOC={(id) => open('indicator', String(id))}
         />
         <FacetPanel
           id="types"
@@ -226,21 +237,26 @@ export function Dashboard() {
             />
           </div>
         </section>
-        <IndicatorTable
-          data={rows.data}
-          page={page}
-          sort={sort}
-          order={order}
-          setPage={filters.setPage}
-          setSort={(value) => {
-            if (sort === value) setOrder(order === 'asc' ? 'desc' : 'asc');
-            else {
-              setSort(value);
-              setOrder('desc');
-            }
-          }}
-          open={(id) => open('indicator', String(id))}
-        />
+        {!(
+          filters.params.get('date_from') &&
+          filters.params.get('date_from') === filters.params.get('date_to')
+        ) && (
+          <IndicatorTable
+            data={rows.data}
+            page={page}
+            sort={sort}
+            order={order}
+            setPage={filters.setPage}
+            setSort={(value) => {
+              if (sort === value) setOrder(order === 'asc' ? 'desc' : 'asc');
+              else {
+                setSort(value);
+                setOrder('desc');
+              }
+            }}
+            open={(id) => open('indicator', String(id))}
+          />
+        )}
       </div>
       <EntityModal
         token={filters.params.get('modal')}
@@ -356,10 +372,6 @@ const HEAT_COLORS = [
   'var(--color-heat-4)',
 ];
 
-function heatColor(value: number, max: number) {
-  return HEAT_COLORS[value === max ? 4 : Math.min(3, Math.ceil((value / max) * 4))];
-}
-
 function TemporalArchive({
   data,
   basis,
@@ -367,6 +379,10 @@ function TemporalArchive({
   openDate,
   selectedDate,
   clearDate,
+  rows,
+  page,
+  setPage,
+  openIOC,
 }: {
   data: TimePoint[];
   basis: string;
@@ -374,170 +390,76 @@ function TemporalArchive({
   openDate: (value: string) => void;
   selectedDate: string | null;
   clearDate: () => void;
+  rows?: { items: ExploreRow[]; total: number; page_size: number };
+  page: number;
+  setPage: (value: number) => void;
+  openIOC: (id: number) => void;
 }) {
-  const { counts, archive, years, latestKey } = useMemo(() => {
-    const nextCounts = new Map(data.map((item) => [item.date, Number(item.total)]));
-    const nextArchive = new Map<string, { total: number; activeDays: number }>();
-    const yearTotals = new Map<number, number>();
-    const yearBounds = new Map<number, { first: string; last: string }>();
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const { counts, years } = useMemo(() => {
+    const counts = new Map(data.map((item) => [item.date, Number(item.total)]));
+    const totals = new Map<number, number>();
     data.forEach((item) => {
-      const key = item.date.slice(0, 7);
-      const current = nextArchive.get(key) ?? { total: 0, activeDays: 0 };
-      nextArchive.set(key, {
-        total: current.total + Number(item.total),
-        activeDays: current.activeDays + (item.total > 0 ? 1 : 0),
-      });
       const year = Number(item.date.slice(0, 4));
-      yearTotals.set(year, (yearTotals.get(year) ?? 0) + Number(item.total));
-      const bounds = yearBounds.get(year);
-      yearBounds.set(year, {
-        first: bounds ? (item.date < bounds.first ? item.date : bounds.first) : item.date,
-        last: bounds ? (item.date > bounds.last ? item.date : bounds.last) : item.date,
-      });
+      totals.set(year, (totals.get(year) ?? 0) + Number(item.total));
     });
-    const yearRows = Array.from(yearTotals)
-      .map(([year, total]) => ({
-        year,
-        total,
-        first: yearBounds.get(year)?.first ?? `${year}-01-01`,
-        last: yearBounds.get(year)?.last ?? `${year}-12-31`,
-      }))
-      .sort((a, b) => a.year - b.year);
     return {
-      counts: nextCounts,
-      archive: nextArchive,
-      years: yearRows,
-      latestKey: Array.from(nextArchive.keys()).sort().at(-1) ?? '',
+      counts,
+      years: Array.from(totals, ([year, total]) => ({ year, total })).sort(
+        (a, b) => a.year - b.year,
+      ),
     };
   }, [data]);
-  const [selectedYear, setSelectedYear] = useState(
-    Number(latestKey.slice(0, 4)) || new Date().getUTCFullYear(),
-  );
-  const [selectedMonth, setSelectedMonth] = useState(latestKey);
-
-  useEffect(() => {
-    if (!years.some((item) => item.year === selectedYear) && years[0]) {
-      setSelectedYear(years.at(-1)!.year);
+  const yearStart = selectedYear === null ? null : new Date(Date.UTC(selectedYear, 0, 1));
+  const daysInYear = yearStart
+    ? Math.round((Date.UTC(selectedYear! + 1, 0, 1) - yearStart.getTime()) / 86_400_000)
+    : 0;
+  const slots = yearStart
+    ? [
+        ...Array.from({ length: yearStart.getUTCDay() }, () => null),
+        ...Array.from({ length: daysInYear }, (_, index) => {
+          const day = new Date(Date.UTC(selectedYear!, 0, index + 1));
+          const date = day.toISOString().slice(0, 10);
+          return { date, total: counts.get(date) ?? 0, month: day.getUTCMonth() };
+        }),
+      ]
+    : [];
+  const max = Math.max(1, ...slots.map((item) => item?.total ?? 0));
+  const monthLabels = slots.reduce<{ name: string; column: number }[]>((labels, item, index) => {
+    if (item && (index === 0 || item.date.endsWith('-01'))) {
+      labels.push({
+        name: new Date(Date.UTC(selectedYear!, item.month, 1)).toLocaleString('en', {
+          month: 'short',
+          timeZone: 'UTC',
+        }),
+        column: Math.floor(index / 7),
+      });
     }
-    if (!archive.has(selectedMonth) && latestKey) setSelectedMonth(latestKey);
-  }, [archive, latestKey, selectedMonth, selectedYear, years]);
-
-  const monthRows = Array.from({ length: 12 }, (_, index) => {
-    const key = `${selectedYear}-${String(index + 1).padStart(2, '0')}`;
-    const item = archive.get(key) ?? { total: 0, activeDays: 0 };
-    return {
-      key,
-      number: String(index + 1).padStart(2, '0'),
-      label: new Date(Date.UTC(selectedYear, index, 1)).toLocaleString('en', {
-        month: 'short',
-        timeZone: 'UTC',
-      }),
-      ...item,
-    };
-  });
-  const maxMonth = Math.max(1, ...monthRows.map((item) => item.total));
-  const selected = monthRows.find((item) => item.key === selectedMonth) ?? monthRows.at(-1)!;
-  const monthIndex = Number(selected.key.slice(5, 7)) - 1;
-  const daysInMonth = new Date(Date.UTC(selectedYear, monthIndex + 1, 0)).getUTCDate();
-  const firstWeekday = new Date(Date.UTC(selectedYear, monthIndex, 1)).getUTCDay();
-  const daySlots: Array<{ date: string; total: number } | null> = [
-    ...Array.from({ length: firstWeekday }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, index) => {
-      const date = `${selected.key}-${String(index + 1).padStart(2, '0')}`;
-      return { date, total: counts.get(date) ?? 0 };
-    }),
-  ];
-  const maxDay = Math.max(1, ...daySlots.map((item) => item?.total ?? 0));
+    return labels;
+  }, []);
+  const totalPages = Math.max(1, Math.ceil((rows?.total ?? 0) / (rows?.page_size ?? 25)));
   const chooseYear = (year: number) => {
-    setSelectedYear(year);
-    const latestMonth = Array.from(archive.keys())
-      .filter((key) => key.startsWith(`${year}-`))
-      .sort()
-      .at(-1);
-    if (latestMonth) setSelectedMonth(latestMonth);
+    setSelectedYear((current) => (current === year ? null : year));
+    if (selectedDate) clearDate();
   };
-  const openFolderContents = (
-    <div className="archive-folder-drawer">
-      <div className="archive-drawer-heading">
-        <span>month files</span>
-        <strong>{selectedYear}</strong>
-        <small>open a month to inspect its days</small>
-      </div>
-      <div className="archive-workspace">
-        <div className="archive-months" aria-label={`Months in ${selectedYear}`}>
-          {monthRows.map((month) => (
-            <button
-              key={month.key}
-              className={month.key === selectedMonth ? 'archive-file selected' : 'archive-file'}
-              onClick={() => setSelectedMonth(month.key)}
-              aria-pressed={month.key === selectedMonth}
-              disabled={month.total === 0}
-            >
-              <span className="archive-file-index">{month.number}</span>
-              <b>{month.label}</b>
-              <span className="archive-file-bar">
-                <i style={{ width: `${(month.total / maxMonth) * 100}%` }} />
-              </span>
-              <span>{month.activeDays}d</span>
-              <strong>{month.total.toLocaleString()}</strong>
-            </button>
-          ))}
-        </div>
-        <div className="archive-days">
-          <div className="archive-days-heading">
-            <div>
-              <span>month file open / {selected.key}</span>
-              <strong>{selected.total.toLocaleString()} indicators</strong>
-            </div>
-            {selectedDate && <button onClick={clearDate}>clear day filter</button>}
-          </div>
-          <div className="archive-calendar">
-            <div className="archive-weekdays" aria-hidden="true">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <span key={day}>{day}</span>
-              ))}
-            </div>
-            <div className="archive-day-grid" aria-label={`${selected.key} daily IOC heat map`}>
-              {daySlots.map((item, index) =>
-                item ? (
-                  <button
-                    key={item.date}
-                    className={item.date === selectedDate ? 'selected' : ''}
-                    style={{ backgroundColor: heatColor(item.total, maxDay) }}
-                    onClick={() => openDate(item.date)}
-                    aria-label={`${item.date}: ${item.total} indicators`}
-                    title={`${item.date}: ${item.total.toLocaleString()} indicators`}
-                  />
-                ) : (
-                  <i key={`empty-${index}`} />
-                ),
-              )}
-            </div>
-          </div>
-          <div className="heatmap-legend">
-            <span>less</span>
-            {HEAT_COLORS.map((item) => (
-              <i key={item} style={{ background: item }} />
-            ))}
-            <span>more</span>
-            <small>click a day to filter the IOC table</small>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <section id="activity" className="panel timeseries-panel archive-panel">
       <div className="panel-heading">
         <div>
           <h2 className="section-label">Temporal archive</h2>
-          <p className="archive-note">year / month files → day cells → matching IOC rows</p>
+          <p className="archive-note">open a year / select a day / inspect its IOCs</p>
         </div>
         <div className="chart-controls">
           <label>
             basis{' '}
-            <select value={basis} onChange={(event) => setBasis(event.target.value)}>
+            <select
+              value={basis}
+              onChange={(event) => {
+                setBasis(event.target.value);
+                if (selectedDate) clearDate();
+              }}
+            >
               <option value="first_seen">first seen</option>
               <option value="last_seen">last seen</option>
             </select>
@@ -550,44 +472,129 @@ function TemporalArchive({
           <span>newest / front</span>
         </div>
         <div className="archive-stack" aria-label="Archive year files">
-          {years.map((item, index) => (
-            <article
-              key={item.year}
-              className={item.year === selectedYear ? 'archive-folder selected' : 'archive-folder'}
-              style={
-                {
-                  '--folder-index': index,
-                  '--tab-slot': index % 4,
-                } as React.CSSProperties
-              }
-            >
-              <button
-                className="archive-folder-tab"
-                onClick={() => chooseYear(item.year)}
-                aria-expanded={item.year === selectedYear}
+          {years.map((item, index) => {
+            const isOpen = item.year === selectedYear;
+            return (
+              <article
+                key={item.year}
+                className={isOpen ? 'archive-folder selected' : 'archive-folder'}
+                style={{ '--folder-index': index, '--tab-slot': index % 4 } as React.CSSProperties}
               >
-                {item.year}
-              </button>
-              <div className="archive-folder-face">
-                <div className="archive-folder-meta">
-                  <strong>{item.total.toLocaleString()} IOC</strong>
-                  <small>
-                    {item.first} / {item.last}
-                  </small>
+                <button
+                  className="archive-folder-tab"
+                  onClick={() => chooseYear(item.year)}
+                  aria-expanded={isOpen}
+                  aria-label={`${item.year}: ${item.total.toLocaleString()} indicators`}
+                >
+                  {item.year}
+                </button>
+                <div className="archive-folder-face">
+                  <div className="archive-folder-meta">
+                    <strong>{item.total.toLocaleString()} IOC</strong>
+                    <small>
+                      {item.year} / {basis.replace('_', ' ')}
+                    </small>
+                  </div>
+                  <span className="archive-folder-state">
+                    {isOpen ? 'close file' : 'open file'}
+                  </span>
+                  {isOpen && (
+                    <div className="archive-folder-drawer">
+                      <div className="archive-drawer-heading">
+                        <span>activity / {item.year}</span>
+                        <small>each square is a day; select one for IOC records</small>
+                      </div>
+                      <div
+                        className="archive-year-calendar"
+                        role="group"
+                        aria-label={`${item.year} daily IOC heat map`}
+                      >
+                        <div className="archive-month-axis" aria-hidden="true">
+                          {monthLabels.map((month) => (
+                            <span key={month.name} style={{ gridColumn: month.column + 1 }}>
+                              {month.name}
+                            </span>
+                          ))}
+                        </div>
+                        <div className="archive-year-grid">
+                          {slots.map((cell, slot) =>
+                            cell ? (
+                              <button
+                                key={cell.date}
+                                className={selectedDate === cell.date ? 'selected' : ''}
+                                style={{
+                                  backgroundColor:
+                                    HEAT_COLORS[
+                                      cell.total === max
+                                        ? 4
+                                        : Math.min(3, Math.ceil((cell.total / max) * 4))
+                                    ],
+                                }}
+                                onClick={() => openDate(cell.date)}
+                                aria-label={`${cell.date}: ${cell.total} indicators`}
+                                title={`${cell.date}: ${cell.total.toLocaleString()} indicators`}
+                              />
+                            ) : (
+                              <i key={`offset-${slot}`} />
+                            ),
+                          )}
+                        </div>
+                      </div>
+                      <div className="heatmap-legend">
+                        <span>less</span>
+                        {HEAT_COLORS.map((color) => (
+                          <i key={color} style={{ background: color }} />
+                        ))}
+                        <span>more</span>
+                      </div>
+                      {selectedDate && selectedDate.startsWith(`${item.year}-`) && (
+                        <div className="archive-results">
+                          <div className="archive-results-heading">
+                            <strong>{selectedDate} / IOC records</strong>
+                            <button onClick={clearDate}>clear day filter</button>
+                          </div>
+                          <div className="archive-results-scroll">
+                            {!rows && <p>Loading IOC records…</p>}
+                            {rows?.items.map((row) => (
+                              <button
+                                key={row.id}
+                                className="archive-result"
+                                onClick={() => openIOC(row.id)}
+                              >
+                                <span>{row.type}</span>
+                                <span>{row.value}</span>
+                                <span className={`verdict-${row.verdict}`}>{row.verdict}</span>
+                              </button>
+                            ))}
+                            {rows && rows.items.length === 0 && (
+                              <p>No matching IOCs on this day.</p>
+                            )}
+                          </div>
+                          <div className="archive-results-page">
+                            <span>
+                              {(rows?.total ?? 0).toLocaleString()} IOCs · page {page} /{' '}
+                              {totalPages}
+                            </span>
+                            <button disabled={page <= 1} onClick={() => setPage(page - 1)}>
+                              previous
+                            </button>
+                            <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
+                              next
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <span className="archive-folder-state">
-                  {item.year === selectedYear ? 'file open' : 'open file'}
-                </span>
-                {item.year === selectedYear && openFolderContents}
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
-
 function IndicatorTable({
   data,
   page,

@@ -36,6 +36,7 @@ class ExploreFilters(BaseModel):
     asns: list[int] = []
     date_from: date | None = None
     date_to: date | None = None
+    date_basis: Literal["first_seen", "last_seen"] = "first_seen"
     contains: str | None = None
 
 
@@ -53,6 +54,7 @@ def parse_filters(
     asns: list[str] | None = Query(None, alias="asn"),
     date_from: date | None = None,
     date_to: date | None = None,
+    date_basis: Literal["first_seen", "last_seen"] = "first_seen",
     contains: str | None = Query(None, max_length=200),
 ) -> ExploreFilters:
     parsed_asns = []
@@ -71,6 +73,7 @@ def parse_filters(
         asns=parsed_asns,
         date_from=date_from,
         date_to=date_to,
+        date_basis=date_basis,
         contains=contains.strip() if contains else None,
     )
 
@@ -81,10 +84,11 @@ def _ids(filters: ExploreFilters, exclude: str | None = None):
         stmt = stmt.where(Indicator.type.in_(filters.types))
     if filters.contains:
         stmt = stmt.where(Indicator.value.ilike(f"%{filters.contains}%"))
+    date_column = Indicator.last_seen if filters.date_basis == "last_seen" else Indicator.first_seen
     if filters.date_from:
-        stmt = stmt.where(Indicator.first_seen >= filters.date_from)
+        stmt = stmt.where(date_column >= filters.date_from)
     if filters.date_to:
-        stmt = stmt.where(Indicator.first_seen < filters.date_to + timedelta(days=1))
+        stmt = stmt.where(date_column < filters.date_to + timedelta(days=1))
     if filters.sources and exclude != "source":
         stmt = stmt.where(
             exists(

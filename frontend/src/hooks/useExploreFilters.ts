@@ -10,12 +10,17 @@ export function useExploreFilters() {
   const active = FILTER_KEYS.flatMap((key) => params.getAll(key).map((value) => ({ key, value })));
   const update = useCallback(
     (mutate: (next: URLSearchParams) => void, resetPage = true) => {
-      const next = new URLSearchParams(params);
-      mutate(next);
-      if (resetPage) next.delete('page');
-      setParams(next, { replace: true });
+      setParams(
+        (current) => {
+          const next = new URLSearchParams(current);
+          mutate(next);
+          if (resetPage) next.delete('page');
+          return next;
+        },
+        { replace: true },
+      );
     },
-    [params, setParams],
+    [setParams],
   );
   return {
     params,
@@ -50,7 +55,7 @@ export function useExploreFilters() {
       update((next) => {
         next.set('date_from', value);
         next.set('date_to', value);
-        next.set('modal', `bucket:${value}`);
+        next.delete('modal');
       }),
     applyFilter: (key: FilterKey, value: string) =>
       update((next) => {

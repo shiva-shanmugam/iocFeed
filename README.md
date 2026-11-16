@@ -1,20 +1,20 @@
 # IOC//FEED
 
-A local-first IOC lookup and threat-intelligence console. It ingests up to 110,000 URLs, IPv4 addresses, domains, and hashes into PostgreSQL, exposes a FastAPI API, and presents investigations in a dark React SOC interface. No third-party threat service is queried during a lookup.
+A local-first IOC lookup and threat-intelligence console. It stores up to 310,000 URLs, IPv4 addresses, domains, and hashes in PostgreSQL, exposes a FastAPI API, and presents investigations in a dark React SOC interface. No third-party threat service is queried during a lookup.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  Abuse[abuse.ch feeds] --> Worker[APScheduler worker]
-  Seed[deterministic fallback seed] --> Worker
-  Worker --> DB[(PostgreSQL 16\npg_trgm + inet)]
+  Abuse[abuse.ch feeds] --> Ingest[manual ingestion]
+  Seed[deterministic seed] --> Ingest
+  Ingest --> DB[(PostgreSQL 16\npg_trgm + inet)]
   Browser[React SOC console] --> API[FastAPI]
   API --> DB
   API -. SSE logs .-> Browser
 ```
 
-The worker is a separate process from the API. Feed adapters share a typed `IndicatorIn` normalization boundary and use PostgreSQL conflict handling to deduplicate `(type, value)` while retaining one source link per feed. The graph uses `react-force-graph-2d`: it is smaller and maps directly to the API's incremental node/edge expansion model; rendered neighborhoods are hard-capped at 250 nodes.
+Ingestion runs on demand; the scheduled worker is disabled by default through a Compose profile. Feed adapters share a typed `IndicatorIn` normalization boundary and use PostgreSQL conflict handling to deduplicate `(type, value)` while retaining one source link per feed. The graph uses `react-force-graph-2d` and caps rendered neighborhoods at 250 nodes.
 
 ## Quick start
 
@@ -31,7 +31,7 @@ Open:
 - API health: http://localhost:8000/api/health
 - PostgreSQL: `localhost:5432`
 
-No `.env` file is required for the synthetic demo; copy `.env.example` to `.env` only when customizing it. On first boot the API waits for PostgreSQL, runs Alembic, and initializes data. With no `ABUSECH_AUTH_KEY`, it prints a warning and generates exactly `MAX_INDICATORS` deterministic synthetic rows (110,000 by default) across a three-year activity window. The operation is idempotent. The worker then refreshes feeds every 30 minutes or keeps the seeded demo available when credentials/network are absent.
+No `.env` file is required for the synthetic demo; copy `.env.example` to `.env` only when customizing it. On first boot the API waits for PostgreSQL, runs Alembic, and initializes data. With no `ABUSECH_AUTH_KEY`, it generates exactly `MAX_INDICATORS` deterministic synthetic rows (310,000 by default) across a three-year activity window. The operation is idempotent. Continuous ingestion is off by default.
 
 ## Real feeds and geo
 
@@ -52,8 +52,8 @@ For real IP geolocation, download a GeoLite2 City database from MaxMind, mount i
 | `DATABASE_URL` | Compose PostgreSQL URL | SQLAlchemy/psycopg connection |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `ioc`, `ioc`, `change-me` | Database bootstrap |
 | `ABUSECH_AUTH_KEY` | empty | Enables live ingestion |
-| `MAX_INDICATORS` | `110000` | Global hard cap |
-| `INGEST_INTERVAL_MINUTES` | `30` | Worker schedule |
+| `MAX_INDICATORS` | `310000` | Global hard cap |
+| `INGEST_INTERVAL_MINUTES` | `30` | Optional worker schedule |
 | `MAXMIND_DB_PATH` | empty | Optional GeoLite2 City file |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Sole allowed CORS origin |
 | `VITE_API_URL` | `http://localhost:8000` | Browser API base URL |
@@ -64,7 +64,7 @@ Do not commit `.env`; it is ignored. Change the database password for any non-lo
 ## Operations
 
 ```bash
-make up        # build and run all services
+make up        # build and run database, API, and frontend
 make seed      # idempotently fill to MAX_INDICATORS
 make ingest    # run every feed adapter once
 make test      # backend and frontend tests in containers
@@ -72,13 +72,14 @@ make reset-db  # remove the named database volume and rebuild
 ```
 
 The manual ingestion entry point is `python -m ingest.run --once`. API ingestion never runs inside the web process.
+The scheduled worker starts only when explicitly using `docker compose --profile continuous-ingestion up`.
 
 ## Demo script
 
 1. Search `10.0.0.1`, a deterministic seeded IPv4 IOC.
 2. Open a result such as `http://node-3.malware-test.example/drop/4.bin`, expand graph nodes, select two nodes to request their shortest path, and open the risk drawer.
 3. Use family, ASN, `/24`, and tag pivots in the drawer.
-4. Open **IOC Atlas** to drill from year indexes into ordered month files, then select a day cell to filter the matching IOC rows.
+4. Open **IOC Atlas**, select a year file to reveal its full-year heatmap, then select a day cell to inspect its IOC records in the file.
 5. Paste `10.0.0.1`, `node-2.malware-test.example`, and an unknown value into **Bulk Triage**, then export a format.
 6. Open **Geo+Time**, choose Emotet, and play the timeline.
 
