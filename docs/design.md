@@ -31,7 +31,7 @@ JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Sec
 - Tables have hairline row dividers, no zebra striping, and surface-color hover.
 - Transitions are limited to 100ms color, opacity, background, and border changes. The explorer additionally permits a 320ms count update, a 160ms drawer entrance, and a 280ms hover transform on a closed file's decorative surface. File click areas and open heatmaps never transform.
 - Respect `prefers-reduced-motion`.
-- One ambient motion exception is allowed: a faint grey orbit in the lower sidebar, with a single arc and dot turning once every 96 seconds. It sits behind navigation, never receives pointer events, and has no effect on layout. Reduced motion stops it entirely. Its opacity and speed use the `--ambient-orbit-*` tokens. Do not extend this exception to other decorative animation.
+- One ambient motion treatment is allowed: a faint grey orbit in the lower sidebar and a larger copy at the top right of the main workspace. Each has one arc and dot turning every 96 seconds. The workspace orbit scales from 480px to 720px while keeping a 1px stroke. Both sit behind content, never receive pointer events, and have no effect on layout. Clip the workspace orbit to a dedicated fixed background layer so it cannot create overflow or clip drawers. Reduced motion stops both entirely. Their opacity, speed, and workspace size use the `--ambient-orbit-*` tokens. Do not extend this exception to other decorative animation.
 
 ## Data visualization
 

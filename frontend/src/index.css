@@ -22,6 +22,7 @@
   --color-heat-6: #7aa2f7;
   --ambient-orbit-opacity: 0.28;
   --ambient-orbit-duration: 96s;
+  --ambient-orbit-workspace-size: clamp(480px, 52vw, 720px);
   --sidebar-width: 184px;
   --status-height: 28px;
   font-family: 'JetBrains Mono', monospace;
@@ -197,6 +198,29 @@ input[type='range'] {
   transform-box: view-box;
   transform-origin: center;
   animation: ambient-orbit-turn var(--ambient-orbit-duration) linear infinite;
+}
+.app-shell {
+  isolation: isolate;
+}
+.workspace-backdrop {
+  position: fixed;
+  inset: 0 0 var(--status-height) var(--sidebar-width);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.workspace-content {
+  position: relative;
+  z-index: 1;
+}
+.ambient-orbit--workspace {
+  z-index: auto;
+  top: calc(var(--ambient-orbit-workspace-size) * -0.3);
+  right: calc(var(--ambient-orbit-workspace-size) * -0.24);
+  bottom: auto;
+  left: auto;
+  width: var(--ambient-orbit-workspace-size);
+  height: var(--ambient-orbit-workspace-size);
 }
 @keyframes ambient-orbit-turn {
   to {

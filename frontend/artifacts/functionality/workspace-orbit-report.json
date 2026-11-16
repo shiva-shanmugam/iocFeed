@@ -1,0 +1,18 @@
+{
+  "placement": {
+    "width": 720,
+    "top": -216,
+    "right": 1612.796875,
+    "pointerEvents": "none",
+    "stroke": "non-scaling-stroke"
+  },
+  "bothRotate": true,
+  "archiveClicks": true,
+  "navigation": true,
+  "reducedMotion": [
+    "none",
+    "none"
+  ],
+  "horizontalOverflow": false,
+  "consoleErrors": []
+}

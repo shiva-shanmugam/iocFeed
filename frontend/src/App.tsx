@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Nav } from './components/Nav';
 import { StatusBar } from './components/StatusBar';
+import { AmbientOrbit } from './components/AmbientOrbit';
 const Home = lazy(() => import('./pages/Home').then((x) => ({ default: x.Home })));
 const Investigation = lazy(() =>
   import('./pages/Investigation').then((x) => ({ default: x.Investigation })),
@@ -22,9 +23,12 @@ const IOCRecord = lazy(() => import('./pages/IOCRecord').then((x) => ({ default:
 const Evidence = lazy(() => import('./pages/Evidence').then((x) => ({ default: x.Evidence })));
 export default function App() {
   return (
-    <div className="min-h-screen bg-base text-primary">
+    <div className="app-shell min-h-screen bg-base text-primary">
+      <div className="workspace-backdrop" aria-hidden="true">
+        <AmbientOrbit placement="workspace" />
+      </div>
       <Nav />
-      <div className="ml-[184px] pb-7 min-h-screen">
+      <div className="workspace-content ml-[184px] pb-7 min-h-screen">
         <Suspense fallback={<main className="p-4 text-secondary">loading module...</main>}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
