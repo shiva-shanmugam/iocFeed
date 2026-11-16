@@ -348,6 +348,17 @@ function MiniFacet({
 }
 
 type TimePoint = { date: string; total: number };
+const HEAT_COLORS = [
+  'var(--color-heat-0)',
+  'var(--color-heat-1)',
+  'var(--color-heat-2)',
+  'var(--color-heat-3)',
+  'var(--color-heat-4)',
+];
+
+function heatColor(value: number, max: number) {
+  return HEAT_COLORS[value === max ? 4 : Math.min(3, Math.ceil((value / max) * 4))];
+}
 
 function TemporalArchive({
   data,
@@ -368,6 +379,7 @@ function TemporalArchive({
     const nextCounts = new Map(data.map((item) => [item.date, Number(item.total)]));
     const nextArchive = new Map<string, { total: number; activeDays: number }>();
     const yearTotals = new Map<number, number>();
+    const yearBounds = new Map<number, { first: string; last: string }>();
     data.forEach((item) => {
       const key = item.date.slice(0, 7);
       const current = nextArchive.get(key) ?? { total: 0, activeDays: 0 };
@@ -377,22 +389,50 @@ function TemporalArchive({
       });
       const year = Number(item.date.slice(0, 4));
       yearTotals.set(year, (yearTotals.get(year) ?? 0) + Number(item.total));
+      const bounds = yearBounds.get(year);
+      yearBounds.set(year, {
+        first: bounds ? (item.date < bounds.first ? item.date : bounds.first) : item.date,
+        last: bounds ? (item.date > bounds.last ? item.date : bounds.last) : item.date,
+      });
     });
+    const yearRows = Array.from(yearTotals)
+      .map(([year, total]) => {
+        const start = new Date(Date.UTC(year, 0, 1));
+        const daysInYear = Math.round((Date.UTC(year + 1, 0, 1) - start.getTime()) / 86_400_000);
+        const slots: Array<{ date: string; total: number } | null> = [
+          ...Array.from({ length: start.getUTCDay() }, () => null),
+          ...Array.from({ length: daysInYear }, (_, index) => {
+            const date = new Date(start);
+            date.setUTCDate(index + 1);
+            const key = date.toISOString().slice(0, 10);
+            return { date: key, total: nextCounts.get(key) ?? 0 };
+          }),
+        ];
+        return {
+          year,
+          total,
+          first: yearBounds.get(year)?.first ?? `${year}-01-01`,
+          last: yearBounds.get(year)?.last ?? `${year}-12-31`,
+          slots,
+          max: Math.max(1, ...slots.map((item) => item?.total ?? 0)),
+        };
+      })
+      .sort((a, b) => a.year - b.year);
     return {
       counts: nextCounts,
       archive: nextArchive,
-      years: Array.from(yearTotals)
-        .map(([year, total]) => ({ year, total }))
-        .sort((a, b) => b.year - a.year),
+      years: yearRows,
       latestKey: Array.from(nextArchive.keys()).sort().at(-1) ?? '',
     };
   }, [data]);
-  const [selectedYear, setSelectedYear] = useState(Number(latestKey.slice(0, 4)) || new Date().getUTCFullYear());
+  const [selectedYear, setSelectedYear] = useState(
+    Number(latestKey.slice(0, 4)) || new Date().getUTCFullYear(),
+  );
   const [selectedMonth, setSelectedMonth] = useState(latestKey);
 
   useEffect(() => {
     if (!years.some((item) => item.year === selectedYear) && years[0]) {
-      setSelectedYear(years[0].year);
+      setSelectedYear(years.at(-1)!.year);
     }
     if (!archive.has(selectedMonth) && latestKey) setSelectedMonth(latestKey);
   }, [archive, latestKey, selectedMonth, selectedYear, years]);
@@ -423,15 +463,6 @@ function TemporalArchive({
     }),
   ];
   const maxDay = Math.max(1, ...daySlots.map((item) => item?.total ?? 0));
-  const colors = [
-    'var(--color-heat-0)',
-    'var(--color-heat-1)',
-    'var(--color-heat-2)',
-    'var(--color-heat-3)',
-    'var(--color-heat-4)',
-  ];
-  const color = (value: number) =>
-    colors[value === maxDay ? 4 : Math.min(3, Math.ceil((value / maxDay) * 4))];
   const chooseYear = (year: number) => {
     setSelectedYear(year);
     const latestMonth = Array.from(archive.keys())
@@ -458,18 +489,58 @@ function TemporalArchive({
           </label>
         </div>
       </div>
-      <div className="archive-years" aria-label="Archive years">
-        {years.map((item) => (
-          <button
-            key={item.year}
-            className={item.year === selectedYear ? 'selected' : ''}
-            onClick={() => chooseYear(item.year)}
-            aria-pressed={item.year === selectedYear}
-          >
-            <b>{item.year}</b>
-            <span>{item.total.toLocaleString()} IOC</span>
-          </button>
-        ))}
+      <div className="archive-stack-shell">
+        <div className="archive-depth-labels" aria-hidden="true">
+          <span>oldest / back</span>
+          <span>newest / front</span>
+        </div>
+        <div className="archive-stack" aria-label="Archive year files">
+          {years.map((item, index) => (
+            <button
+              key={item.year}
+              className={item.year === selectedYear ? 'archive-folder selected' : 'archive-folder'}
+              onClick={() => chooseYear(item.year)}
+              aria-pressed={item.year === selectedYear}
+              style={
+                {
+                  '--folder-index': index,
+                  '--tab-slot': index % 4,
+                } as React.CSSProperties
+              }
+            >
+              <span className="archive-folder-tab">{item.year}</span>
+              <span className="archive-folder-face">
+                <span className="archive-folder-meta">
+                  <strong>{item.total.toLocaleString()} IOC</strong>
+                  <small>
+                    {item.first} / {item.last}
+                  </small>
+                </span>
+                <span className="archive-mini-map" aria-hidden="true">
+                  {item.slots.map((cell, slot) =>
+                    cell ? (
+                      <i
+                        className="archive-mini-cell"
+                        key={cell.date}
+                        style={{ backgroundColor: heatColor(cell.total, item.max) }}
+                      />
+                    ) : (
+                      <i className="archive-mini-cell empty" key={`empty-${slot}`} />
+                    ),
+                  )}
+                </span>
+                <span className="archive-folder-state">
+                  {item.year === selectedYear ? 'file open' : 'open file'}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="archive-open-heading">
+        <span>open file</span>
+        <strong>{selectedYear}</strong>
+        <small>select a month, then a day</small>
       </div>
       <div className="archive-workspace">
         <div className="archive-months" aria-label={`Months in ${selectedYear}`}>
@@ -497,9 +568,7 @@ function TemporalArchive({
               <span>{selected.key}</span>
               <strong>{selected.total.toLocaleString()} indicators</strong>
             </div>
-            {selectedDate && (
-              <button onClick={clearDate}>clear day filter</button>
-            )}
+            {selectedDate && <button onClick={clearDate}>clear day filter</button>}
           </div>
           <div className="archive-calendar">
             <div className="archive-weekdays" aria-hidden="true">
@@ -513,7 +582,7 @@ function TemporalArchive({
                   <button
                     key={item.date}
                     className={item.date === selectedDate ? 'selected' : ''}
-                    style={{ backgroundColor: color(item.total) }}
+                    style={{ backgroundColor: heatColor(item.total, maxDay) }}
                     onClick={() => openDate(item.date)}
                     aria-label={`${item.date}: ${item.total} indicators`}
                     title={`${item.date}: ${item.total.toLocaleString()} indicators`}
@@ -526,7 +595,7 @@ function TemporalArchive({
           </div>
           <div className="heatmap-legend">
             <span>less</span>
-            {colors.map((item) => (
+            {HEAT_COLORS.map((item) => (
               <i key={item} style={{ background: item }} />
             ))}
             <span>more</span>
