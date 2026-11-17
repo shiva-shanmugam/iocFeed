@@ -1,6 +1,6 @@
 # IOC//FEED
 
-A local-first IOC lookup and threat-intelligence console. It stores up to 310,000 URLs, IPv4 addresses, domains, and hashes in PostgreSQL, exposes a FastAPI API, and presents investigations in a dark React SOC interface. No third-party threat service is queried during a lookup.
+A local-first IOC lookup and threat-intelligence console. It stores up to 1,310,000 URLs, IPv4 addresses, domains, and hashes in PostgreSQL, exposes a FastAPI API, and presents investigations in a dark React SOC interface. No third-party threat service is queried during a lookup.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ flowchart LR
   API -. SSE logs .-> Browser
 ```
 
-Ingestion runs on demand; the scheduled worker is disabled by default through a Compose profile. Feed adapters share a typed `IndicatorIn` normalization boundary and use PostgreSQL conflict handling to deduplicate `(type, value)` while retaining one source link per feed. The graph uses `react-force-graph-2d` and caps rendered neighborhoods at 250 nodes.
+Ingestion runs on demand; the scheduled worker is disabled by default through a Compose profile. Feed adapters share a typed `IndicatorIn` normalization boundary and use PostgreSQL conflict handling to deduplicate `(type, value)` while retaining one source link per feed. The graph uses `react-force-graph-2d` and caps rendered neighborhoods at 250 nodes. Its canvas measures the available workspace and automatically fits the neighbourhood when the evidence panel or viewport changes. The graph starting page lists highly connected roots.
 
 ## Quick start
 
@@ -31,7 +31,7 @@ Open:
 - API health: http://localhost:8000/api/health
 - PostgreSQL: `localhost:5432`
 
-No `.env` file is required for the synthetic demo; copy `.env.example` to `.env` only when customizing it. On first boot the API waits for PostgreSQL, runs Alembic, and initializes data. With no `ABUSECH_AUTH_KEY`, it generates exactly `MAX_INDICATORS` deterministic synthetic rows (310,000 by default) across a three-year activity window. The operation is idempotent. Continuous ingestion is off by default.
+No `.env` file is required for the synthetic demo; copy `.env.example` to `.env` only when customizing it. On first boot the API waits for PostgreSQL, runs Alembic, and initializes data. With no `ABUSECH_AUTH_KEY`, it generates exactly `MAX_INDICATORS` deterministic synthetic rows (1,310,000 by default) across a three-year activity window. The operation is idempotent. Continuous ingestion is off by default.
 
 ## Real feeds and geo
 
@@ -52,7 +52,7 @@ For real IP geolocation, download a GeoLite2 City database from MaxMind, mount i
 | `DATABASE_URL` | Compose PostgreSQL URL | SQLAlchemy/psycopg connection |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | `ioc`, `ioc`, `change-me` | Database bootstrap |
 | `ABUSECH_AUTH_KEY` | empty | Enables live ingestion |
-| `MAX_INDICATORS` | `310000` | Global hard cap |
+| `MAX_INDICATORS` | `1310000` | Global hard cap |
 | `INGEST_INTERVAL_MINUTES` | `30` | Optional worker schedule |
 | `MAXMIND_DB_PATH` | empty | Optional GeoLite2 City file |
 | `FRONTEND_ORIGIN` | `http://localhost:5173` | Sole allowed CORS origin |
@@ -82,6 +82,14 @@ The scheduled worker starts only when explicitly using `docker compose --profile
 4. Open **IOC Atlas**, select a year file to reveal its full-year heatmap, then select a day cell to inspect its IOC records in the file.
 5. Paste `10.0.0.1`, `node-2.malware-test.example`, and an unknown value into **Bulk Triage**, then export a format.
 6. Open **Geo+Time**, choose Emotet, and play the timeline.
+
+## Evidence Replay
+
+Open **Replay** in the sidebar or choose **evidence replay** from an IOC, source-evidence page, or Atlas drawer. The capture timeline and range control compare a recorded state with the current record. Source lanes show which reports were present at each capture; matched upstream origin IDs group copied reports without claiming that unrelated feed names are independent. Small matched-position neighbourhood diagrams show added and removed links. Capture links are shareable.
+
+History uses the time a state was recorded, separately from the source's first/last observation dates. Existing data receives a present-time baseline; earlier history is unavailable. Source imports capture changes automatically and skip identical states. Three highly connected synthetic IOCs include clearly labeled **simulated** earlier stages for exploring the interface.
+
+The one-shot expansion command is `docker compose run --rm api python -m ingest.bulk_demo --count 1000000`. It respects `MAX_INDICATORS`, uses bounded batches, creates explicit synthetic `resolves_to`, `hosted_on`, and `payload_of` relationships, and backfills capture-time baselines. Its temporary container removes itself. No scheduled worker starts in normal Compose operation.
 
 ## Development and tests
 

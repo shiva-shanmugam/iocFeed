@@ -1,6 +1,6 @@
 # Functional audit
 
-Audit date: 2026-11-17. The local Docker application was tested at 1440×900 with Playwright against 310,000 indicators after the archive and IOC data changes. The machine-readable result is in `frontend/artifacts/functionality/report.json`; screenshots are stored beside it, including the closed default archive, hover state, and open day IOC list.
+Audit date: 2026-11-17. The local Docker application was tested at 1440×900 with Playwright against 1,310,000 indicators and 923,999 relationships after the archive and IOC data changes. The machine-readable result is in `frontend/artifacts/functionality/report.json`; screenshots are stored beside it, including the closed default archive, hover state, and open day IOC list.
 
 ## Relationship graph model
 
@@ -27,7 +27,8 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 - Evidence: one locally rendered page per IOC/source observation, normalized fields, raw JSON, attribution, and upstream link handling.
 - Navigation: persistent investigation trail across collection, IOC, and evidence routes.
 - Search: grouped collection and indicator suggestions, with indicators opening permanent IOC records.
-- Graph: root picker, instruction strip, canvas render, evidence drawer open/close, initial expansion API, neighbour expansion API, and shortest-path API.
+- Graph: connected-root leaderboard, instruction strip, actual canvas node click, evidence column open/close, initial and incremental expansion, highlighted shortest path, fit/reset, type filters, bounded queries, and measured canvas centering with the column open, closed, reset, and resized.
+- Evidence Replay: confidence timeline, capture slider and buttons, shareable capture URL/reload, source-presence lanes, mirrored-origin grouping, visible added relationship samples, stored versus simulated labels, and unavailable history before coverage. See `docs/evidence-replay.md` for the capture contract and demo data attribution.
 - Bulk: parsing three inputs and verdict filtering.
 - Map/timeline: plotted points, family filter, date-range filter, play, and pause.
 - Feeds: source table and ingestion log.
@@ -35,6 +36,8 @@ The HexBrain reference influenced the breadcrumb hierarchy, ranked search-to-det
 - Browser: no console errors during the complete flow.
 - Ambient orbits: the lower-sidebar arc and larger top-right workspace copy rotate continuously behind content without intercepting clicks, persist across navigation, stop entirely for reduced motion, and add no horizontal overflow at 820px. The workspace version reaches 720px at 1440px viewport width and keeps a 1px stroke. Archive year/day clicks still work. Screenshots of Atlas and Search plus browser verification are stored as `workspace-orbit-atlas.png`, `workspace-orbit-search.png`, and `workspace-orbit-report.json`; the original sidebar artifacts are retained.
 
-The latest full app audit recorded 58 passing checks and zero failures. The focused archive audit (`frontend/scripts/audit-archive.mjs`) checks compact year opening, expansion only after a day click, collapse when cleared, and repeated day selection across all four years. The focused run passed all 53 checks over 406 animation frames, confirming that the heatmap stays stationary and uncovered during expansion and collapse, and that the full file remains stable during subsequent day changes. It also verified full-file controls, right-side years, keyboard opening at 820px, and reduced motion; its result is in `frontend/artifacts/functionality/archive-report.json`.
+The latest full app audit recorded 58 passing checks and zero failures. The focused archive audit (`frontend/scripts/audit-archive.mjs`) checks compact year opening, expansion only after a day click, collapse when cleared, and repeated day selection across all four years. The preceding archive-only change passed all 53 checks over 406 animation frames, confirming that the heatmap stays stationary and uncovered during expansion and collapse, and that the full file remains stable during subsequent day changes. It also verified full-file controls, right-side years, keyboard opening at 820px, and reduced motion; its result is in `frontend/artifacts/functionality/archive-report.json`.
 
-Frontend unit tests (4), ESLint, TypeScript, and the production build pass. Backend tests from the preceding data update passed (15 passed, 3 integration tests skipped without their opt-in flag). PostgreSQL and the API both confirmed 310,000 stored IOCs; a last-seen day with two stored IOCs returned two API records. The scheduled ingestion worker is stopped and excluded from default Compose startup.
+PostgreSQL confirms 1,310,000 stored IOCs, 923,999 explicit relationships, and 1,310,009 snapshots (9 of those are marked simulated). The temporary import container has exited and removed itself; the scheduled ingestion worker is stopped and excluded from default Compose startup. Only database, API, and frontend services remain running to serve the app.
+
+The Replay/graph audit records 24 passing checks with no browser errors in `frontend/artifacts/functionality/replay-graph-report.json`. The measured rendered-neighbourhood center is within one CSS pixel of the available graph-stage center across open/closed/reset/resized checks. Backend validation: 16 tests passed (7 optional integration tests skipped in the default run); the replay integration file passes all 5 tests with `RUN_DB_TESTS=1`. Frontend unit tests (4), TypeScript build, ESLint, and Ruff also pass.

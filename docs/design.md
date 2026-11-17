@@ -35,9 +35,11 @@ JetBrains Mono is the only typeface. Body text is 13px with 1.5 line height. Sec
 
 ## Data visualization
 
+- The graph canvas must use the measured graph stage, excluding the sidebar, toolbar, and open evidence panel. Initial load, reset, and panel/viewport resizing fit the full bounded neighbourhood. Highlight stored path edges, show direction with small arrows, and keep a 250-node display limit.
 - Graph nodes are neutral flat shapes. Type is conveyed by shape, malicious by a red outline, and selection by the accent outline. No particles, glow, pulse, or persistent labels.
 - Explorer dimensions use sorted neutral bar tables, and every row is both filterable and inspectable.
 - Time activity is a temporal archive: year files are ordered oldest/back to newest/front. There are no tabs; the year sits on the right of each file, and the entire closed file is a button. No file opens by default. Hover moves only the decorative surface and dims siblings; click areas and stacking order stay fixed. Opening a file separates it from its neighbours in normal document flow. When a file is open, other files stay still and dimmed. The open file initially contains only a full-year, seven-row daily heatmap with month labels. Render the IOC list area only after a day is selected and remove it when the day filter is cleared. Keep the heatmap and file header stationary when that area expands or collapses; once visible, keep the list size stable through loading, day changes, and pagination. Use the full-width header to close it. Populated days use five neutral levels based on that year's count quantiles; zero days use the darkest step and only the busiest tenth use the accent.
+- Evidence Replay uses a compact confidence step chart, a capture slider, source-presence lanes, and two small SVG neighbourhoods with matching node positions. Prefer changed neighbours when sampling the miniatures. Accent edges/outlines indicate additions; faded absent nodes preserve the positional comparison. Show current versus selected verdicts as text and 1px bars. Mark simulated stages explicitly and never reconstruct historical verdicts from first-seen dates.
 - Geo uses a flat equirectangular SVG with unfilled country outlines and 3px semantic dots.
 - Timeline is a native range input over a 1px ticked baseline.
 

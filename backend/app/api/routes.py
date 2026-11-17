@@ -173,47 +173,57 @@ def evidence(indicator_id: int, source_name: str, db: Session = Depends(get_db))
 
 
 def _graph(db: Session, root: int, depth: int, max_nodes: int):
+    if not db.get(Indicator, root):
+        raise HTTPException(404, "indicator not found")
     seen = {root}
+    ordered = [root]
     frontier = {root}
-    edges_by_id: dict[int, dict[str, int | str]] = {}
+    edges_by_id = {}
+    truncated = False
     for _ in range(depth):
         if not frontier:
             break
-        rels = db.scalars(
-            select(Relationship)
-            .where(
-                or_(
-                    Relationship.src_indicator_id.in_(frontier),
-                    Relationship.dst_indicator_id.in_(frontier),
-                )
-            )
-            .limit(max_nodes * 4)
-        ).all()
+        rels = db.scalars(select(Relationship).where(or_(
+            Relationship.src_indicator_id.in_(frontier),
+            Relationship.dst_indicator_id.in_(frontier),
+        )).order_by(Relationship.id).limit(max_nodes * 8 + 1)).all()
+        truncated |= len(rels) > max_nodes * 8
         nxt = set()
-        for r in rels:
-            if r.src_indicator_id in seen or r.dst_indicator_id in seen:
-                edges_by_id[r.id] = {
-                    "id": r.id,
-                    "source": r.src_indicator_id,
-                    "target": r.dst_indicator_id,
-                    "type": r.relation_type,
-                }
-                nxt |= {r.src_indicator_id, r.dst_indicator_id}
-            if len(seen | nxt) >= max_nodes:
-                break
-        frontier = nxt - seen
-        seen |= nxt
-    rows = db.scalars(select(Indicator).where(Indicator.id.in_(list(seen)[:max_nodes]))).all()
-    ids = {x.id for x in rows}
-    return {
-        "nodes": [dto(x) for x in rows],
-        "edges": [
-            edge
-            for edge in edges_by_id.values()
-            if edge["source"] in ids and edge["target"] in ids
-        ],
-        "truncated": len(seen) > max_nodes,
-    }
+        for r in rels[:max_nodes * 8]:
+            new_ids = {r.src_indicator_id, r.dst_indicator_id} - seen
+            if len(seen) + len(new_ids) > max_nodes:
+                truncated = True
+                continue
+            for identifier in sorted(new_ids):
+                seen.add(identifier)
+                ordered.append(identifier)
+                nxt.add(identifier)
+            edges_by_id[r.id] = {"id":r.id,"source":r.src_indicator_id,"target":r.dst_indicator_id,"type":r.relation_type}
+        frontier = nxt
+    rows = {i.id:i for i in db.scalars(select(Indicator).where(Indicator.id.in_(ordered))).all()}
+    return {"nodes":[dto(rows[i]) for i in ordered],"edges":list(edges_by_id.values()),"truncated":truncated}
+
+
+_leader_cache = None
+
+
+@router.get("/graph/leaders")
+def graph_leaders(db: Session = Depends(get_db)):
+    from time import monotonic
+    global _leader_cache
+    if _leader_cache and monotonic() - _leader_cache[0] < 60:
+        return _leader_cache[1]
+    rows = db.execute(text("""
+      WITH degree AS (
+        SELECT node,count(*) connections FROM (
+          SELECT src_indicator_id node FROM relationships
+          UNION ALL SELECT dst_indicator_id FROM relationships
+        ) e GROUP BY node ORDER BY connections DESC,node LIMIT 6
+      ) SELECT i.id,i.type,i.value,d.connections FROM degree d JOIN indicators i ON i.id=d.node ORDER BY d.connections DESC,i.id
+    """)).mappings().all()
+    result = {"items":[dict(row) for row in rows]}
+    _leader_cache = (monotonic(), result)
+    return result
 
 
 @router.get("/graph/path")
@@ -226,6 +236,8 @@ def graph_path(
     if from_id == to_id:
         return {"nodes": [from_id], "edges": []}
     queue = [from_id]
+    if not db.get(Indicator, from_id) or not db.get(Indicator, to_id):
+        raise HTTPException(404, "indicator not found")
     parents = {from_id: None}
     parent_edges = {}
     for _ in range(max_depth):
@@ -237,15 +249,18 @@ def graph_path(
                     Relationship.src_indicator_id.in_(queue),
                     Relationship.dst_indicator_id.in_(queue),
                 )
-            )
+            ).order_by(Relationship.id).limit(10001)
         ).all()
+        if len(rels) > 10000 or len(parents) > 3000:
+            raise HTTPException(422, "path search exceeds the bounded neighbourhood; choose closer nodes")
+        frontier_ids = set(queue)
         new = []
         for r in rels:
             for a, b in [
                 (r.src_indicator_id, r.dst_indicator_id),
                 (r.dst_indicator_id, r.src_indicator_id),
             ]:
-                if a in parents and b not in parents:
+                if a in frontier_ids and b not in parents:
                     parents[b] = a
                     parent_edges[b] = {
                         "id": r.id,

@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import router
 from app.api.explore import router as explore_router
+from app.api.replay import router as replay_router
 from app.core.config import settings
 from app.core.rate_limit import rate_limit
 
@@ -20,3 +21,4 @@ app.add_middleware(
 app.middleware("http")(rate_limit)
 app.include_router(router)
 app.include_router(explore_router)
+app.include_router(replay_router)

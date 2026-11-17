@@ -33,6 +33,9 @@ COUNTRIES = [
 def _value(i: int) -> tuple[IndicatorType, str]:
     kind = i % 10
     if kind < 2:
+        if i >= 1_000_000:
+            offset = i - 1_000_000
+            return IndicatorType.ipv4, f"10.{128 + offset // 64516}.{(offset // 254) % 254}.{offset % 254 + 1}"
         if i >= 10_000:
             offset = i - 10_000
             return (

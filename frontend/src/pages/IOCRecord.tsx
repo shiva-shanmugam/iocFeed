@@ -52,6 +52,9 @@ export function IOCRecord() {
           <button className="action" onClick={() => navigator.clipboard.writeText(data.value)}>
             copy IOC
           </button>
+          <Link className="action" to={`/replay/${data.id}`}>
+            evidence replay
+          </Link>
           <Link className="action-primary" to={`/investigate/${data.id}`}>
             open graph
           </Link>

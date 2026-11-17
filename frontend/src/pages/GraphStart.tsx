@@ -1,11 +1,16 @@
 import { FormEvent, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { Header, Panel } from './Dashboard';
 
 export function GraphStart() {
   const [query, setQuery] = useState('');
+  const leaders = useQuery({
+    queryKey: ['graph-leaders'],
+    queryFn: api.graphLeaders,
+    staleTime: 60000,
+  });
   const navigate = useNavigate();
   const results = useQuery({
     queryKey: ['graph-start', query],
@@ -55,6 +60,21 @@ export function GraphStart() {
       ) : query.length > 2 && !results.isFetching ? (
         <p className="text-secondary mt-3">no matching indicators</p>
       ) : null}
+      <section className="record-section graph-leaders">
+        <h2>Most connected IOCs</h2>
+        <p className="record-note">Stored direct relationships; demo records are synthetic.</p>
+        {leaders.data?.items.map((item) => (
+          <div className="graph-leader-row" key={item.id}>
+            <Link to={`/investigate/${item.id}`}>
+              <span>{item.value}</span>
+              <b>{item.connections} relationships</b>
+            </Link>
+            <Link className="action" to={`/replay/${item.id}`}>
+              replay
+            </Link>
+          </div>
+        ))}
+      </section>
       <Panel title="How the graph behaves" className="mt-5 max-w-[900px]">
         <ol className="graph-help-list">
           <li>

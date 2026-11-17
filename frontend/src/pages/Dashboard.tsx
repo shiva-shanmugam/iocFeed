@@ -260,6 +260,7 @@ export function Dashboard() {
       </div>
       <EntityModal
         token={filters.params.get('modal')}
+        replayDate={filters.params.get('date_from')}
         close={() => filters.setOne('modal')}
         apply={(kind, value) => {
           const map: Record<string, FilterKey> = {
@@ -684,11 +685,13 @@ function IndicatorTable({
 
 function EntityModal({
   token,
+  replayDate,
   close,
   apply,
   open,
 }: {
   token: string | null;
+  replayDate: string | null;
   close: () => void;
   apply: (kind: string, value: string) => void;
   open: (kind: string, value: string) => void;
@@ -754,6 +757,14 @@ function EntityModal({
                 </section>
               )}
               <footer>
+                {kind === 'indicator' && (
+                  <Link
+                    className="action"
+                    to={`/replay/${value}${replayDate ? `?at=${replayDate}` : ''}`}
+                  >
+                    evidence replay
+                  </Link>
+                )}
                 {kind === 'indicator' && (
                   <Link className="action-primary" to={`/ioc/${value}`}>
                     open full record

@@ -1,0 +1,33 @@
+{
+  "synthetic": true,
+  "added_indicators": 1000000,
+  "indicators": 1310000,
+  "relationships_before": 123999,
+  "relationships": 923999,
+  "snapshots": 1310009,
+  "simulated_snapshots": 9,
+  "import_container": "removed after completion",
+  "scheduled_ingestion": "disabled",
+  "app_services": [
+    "db",
+    "api",
+    "frontend"
+  ],
+  "most_connected": [
+    {
+      "id": 310008,
+      "value": "172.20.165.27",
+      "relationships": 200
+    },
+    {
+      "id": 311008,
+      "value": "172.20.169.11",
+      "relationships": 200
+    },
+    {
+      "id": 312008,
+      "value": "172.20.172.249",
+      "relationships": 200
+    }
+  ]
+}

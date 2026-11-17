@@ -21,6 +21,7 @@ const Collection = lazy(() =>
 );
 const IOCRecord = lazy(() => import('./pages/IOCRecord').then((x) => ({ default: x.IOCRecord })));
 const Evidence = lazy(() => import('./pages/Evidence').then((x) => ({ default: x.Evidence })));
+const Replay = lazy(() => import('./pages/Replay').then((x) => ({ default: x.Replay })));
 export default function App() {
   return (
     <div className="app-shell min-h-screen bg-base text-primary">
@@ -35,6 +36,8 @@ export default function App() {
             <Route path="/search" element={<Home />} />
             <Route path="/investigate/:id" element={<Investigation />} />
             <Route path="/graph" element={<GraphStart />} />
+            <Route path="/replay" element={<Replay />} />
+            <Route path="/replay/:id" element={<Replay />} />
             <Route path="/collection/:kind/:value" element={<Collection />} />
             <Route path="/ioc/:id" element={<IOCRecord />} />
             <Route path="/evidence/:id/:source" element={<Evidence />} />

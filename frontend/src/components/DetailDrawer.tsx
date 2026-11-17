@@ -3,7 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api/client';
 import { Link } from 'react-router-dom';
 
-export function DetailDrawer({ id, onClose }: { id: number | null; onClose: () => void }) {
+export function DetailDrawer({
+  id,
+  onClose,
+  embedded = false,
+}: {
+  id: number | null;
+  onClose: () => void;
+  embedded?: boolean;
+}) {
   const [tab, setTab] = useState<'intel' | 'raw'>('intel');
   const { data, error, isLoading } = useQuery({
     queryKey: ['detail', id],
@@ -19,7 +27,13 @@ export function DetailDrawer({ id, onClose }: { id: number | null; onClose: () =
       .replaceAll('.', '[.]');
 
   return (
-    <aside className="fixed right-0 top-0 bottom-7 z-40 w-[420px] border-l border-line bg-base overflow-y-auto">
+    <aside
+      className={
+        embedded
+          ? 'graph-detail-panel'
+          : 'fixed right-0 top-0 bottom-7 z-40 w-[420px] border-l border-line bg-base overflow-y-auto'
+      }
+    >
       <header className="h-12 px-3 border-b border-line flex items-center justify-between">
         <span className="section-label mb-0">indicator detail / {id}</span>
         <button className="action" onClick={onClose} aria-label="Close detail">
@@ -60,7 +74,7 @@ export function DetailDrawer({ id, onClose }: { id: number | null; onClose: () =
             graph / {data.type} / indicator {data.id}
           </p>
           <p className="break-all bg-surface p-2 border border-line mt-2">{data.value}</p>
-          <div className="flex gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             <button className="action" onClick={() => navigator.clipboard.writeText(data.value)}>
               copy IOC
             </button>
@@ -70,6 +84,12 @@ export function DetailDrawer({ id, onClose }: { id: number | null; onClose: () =
             >
               copy defanged
             </button>
+            <Link className="action" to={`/replay/${data.id}`}>
+              replay
+            </Link>
+            <Link className="action" to={`/investigate/${data.id}`}>
+              make root
+            </Link>
             <Link className="action-primary" to={`/ioc/${data.id}`}>
               full record
             </Link>

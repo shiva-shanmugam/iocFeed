@@ -1,0 +1,104 @@
+{
+  "passed": [
+    "Connected IOC leaderboard API",
+    "Connected dataset has substantial neighbourhoods",
+    "Simulated history is explicitly labeled",
+    "Replay contains demo stages plus recorded baseline",
+    "Source-presence lanes show both source mentions",
+    "Selected/current relationship miniatures render",
+    "Capture selection has a shareable URL",
+    "Copied report origins are grouped rather than counted as independent",
+    "Relationship miniatures visibly distinguish added neighbours",
+    "Selected capture survives reload",
+    "Latest baseline is marked recorded",
+    "Missing historical evidence does not invent an old verdict",
+    "Existing IOC baseline opens from an uncovered date",
+    "drawer open: canvas matches available stage",
+    "drawer open: visible neighbourhood starts in the centre",
+    "drawer closed: canvas matches available stage",
+    "drawer closed: visible neighbourhood starts in the centre",
+    "Canvas node click opens evidence, expands neighbours, and finds a stored path",
+    "reset: canvas matches available stage",
+    "reset: visible neighbourhood starts in the centre",
+    "resized: canvas matches available stage",
+    "resized: visible neighbourhood starts in the centre",
+    "Graph does not overflow at 1000px",
+    "No browser errors"
+  ],
+  "failed": [],
+  "details": {
+    "leaders": [
+      {
+        "id": 310008,
+        "type": "ipv4",
+        "value": "172.20.165.27",
+        "connections": 200
+      },
+      {
+        "id": 311008,
+        "type": "ipv4",
+        "value": "172.20.169.11",
+        "connections": 200
+      },
+      {
+        "id": 312008,
+        "type": "ipv4",
+        "value": "172.20.172.249",
+        "connections": 200
+      }
+    ],
+    "drawer open": {
+      "canvasWidth": 896,
+      "canvasHeight": 799,
+      "stageWidth": 896,
+      "stageHeight": 799,
+      "centerOffsetX": -0.5,
+      "centerOffsetY": -0.5,
+      "count": 14191,
+      "click": {
+        "x": 455,
+        "y": 132
+      }
+    },
+    "drawer closed": {
+      "canvasWidth": 1256,
+      "canvasHeight": 799,
+      "stageWidth": 1256,
+      "stageHeight": 799,
+      "centerOffsetX": -0.5,
+      "centerOffsetY": -0.5,
+      "count": 14191,
+      "click": {
+        "x": 635,
+        "y": 132
+      }
+    },
+    "reset": {
+      "canvasWidth": 896,
+      "canvasHeight": 799,
+      "stageWidth": 896,
+      "stageHeight": 799,
+      "centerOffsetX": -0.5,
+      "centerOffsetY": -0.5,
+      "count": 14371,
+      "click": {
+        "x": 448,
+        "y": 132
+      }
+    },
+    "resized": {
+      "canvasWidth": 816,
+      "canvasHeight": 699,
+      "stageWidth": 816,
+      "stageHeight": 699,
+      "centerOffsetX": -0.5,
+      "centerOffsetY": -0.5,
+      "count": 9926,
+      "click": {
+        "x": 437,
+        "y": 132
+      }
+    },
+    "consoleErrors": []
+  }
+}

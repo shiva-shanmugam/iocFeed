@@ -182,3 +182,14 @@ class IngestionLog(Base):
     message: Mapped[str] = mapped_column(Text)
     new_count: Mapped[int] = mapped_column(default=0)
     updated_count: Mapped[int] = mapped_column(default=0)
+
+
+class EvidenceSnapshot(Base):
+    __tablename__ = "evidence_snapshots"
+    __table_args__ = (Index("ix_snapshot_indicator_time", "indicator_id", "recorded_at", "id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    indicator_id: Mapped[int] = mapped_column(ForeignKey("indicators.id", ondelete="CASCADE"))
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    reason: Mapped[str] = mapped_column(String(100))
+    simulated: Mapped[bool] = mapped_column(default=False)
+    state: Mapped[dict[str, Any]] = mapped_column(JSONB)

@@ -19,6 +19,7 @@ from app.models import (
     Tag,
 )
 from app.schemas import IndicatorIn
+from app.services.replay import capture_snapshot
 
 
 def ingest_items(source_name: str, source_url: str, items: list[IndicatorIn]) -> tuple[int, int]:
@@ -31,12 +32,15 @@ def ingest_items(source_name: str, source_url: str, items: list[IndicatorIn]) ->
             db.add(source)
             db.flush()
         total = db.scalar(select(func.count()).select_from(Indicator)) or 0
+        touched = set()
         for item in items:
             existing = db.scalar(
                 select(Indicator).where(Indicator.type == item.type, Indicator.value == item.value)
             )
             if not existing and total >= settings.max_indicators:
                 break
+            if existing and existing.id not in touched:
+                capture_snapshot(db, existing.id, "before source update")
             stmt = (
                 insert(Indicator)
                 .values(
@@ -58,6 +62,7 @@ def ingest_items(source_name: str, source_url: str, items: list[IndicatorIn]) ->
                 .returning(Indicator.id)
             )
             iid = db.scalar(stmt)
+            touched.add(iid)
             new += existing is None
             updated += existing is not None
             total += existing is None
@@ -140,6 +145,7 @@ def ingest_items(source_name: str, source_url: str, items: list[IndicatorIn]) ->
                             )
                         )
                     total += host_existing is None
+                    touched.add(host_id)
             if (
                 item.type.value == "ipv4"
                 and settings.maxmind_db_path
@@ -179,6 +185,8 @@ def ingest_items(source_name: str, source_url: str, items: list[IndicatorIn]) ->
                             updated_count=0,
                         )
                     )
+        for indicator_id in sorted(touched):
+            capture_snapshot(db, indicator_id, f"import: {source_name}")
         source.last_sync = now
         source.status = "online"
         db.add(

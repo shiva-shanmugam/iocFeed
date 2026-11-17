@@ -17,6 +17,9 @@ export function Nav() {
         <NavLink to="/graph" className="block border-l-2 border-transparent px-2 py-1.5">
           Graph
         </NavLink>
+        <NavLink to="/replay" className="block border-l-2 border-transparent px-2 py-1.5">
+          Replay
+        </NavLink>
         <NavLink to="/geo" className="block border-l-2 border-transparent px-2 py-1.5">
           Map
         </NavLink>

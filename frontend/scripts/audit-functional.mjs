@@ -128,6 +128,7 @@ try {
   await page.waitForURL(/\/collection\/family\//);
   await page.locator('.collection-table tbody tr').first().waitFor();
   check((await page.getByText('Continue exploring').count()) === 1, 'Collection contextual pivots');
+  await page.locator('.activity-strip i').first().waitFor();
   check((await page.locator('.activity-strip i').count()) > 0, 'Collection activity strip');
   await page.screenshot({ path: 'artifacts/functionality/collection.png', fullPage: false });
   await page.locator('.collection-table .table-link').first().click();

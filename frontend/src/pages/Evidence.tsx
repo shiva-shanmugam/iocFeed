@@ -38,6 +38,9 @@ export function Evidence() {
           <p>{data.indicator.value}</p>
         </div>
         <div className="record-actions">
+          <Link className="action" to={`/replay/${id}`}>
+            evidence replay
+          </Link>
           <Link
             className="action"
             to={`/collection/source/${encodeURIComponent(data.source.name)}`}

@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://ioc:change-me@db:5432/ioc"
     frontend_origin: str = "http://localhost:5173"
     abusech_auth_key: str = ""
-    max_indicators: int = 310_000
+    max_indicators: int = 1_310_000
     ingest_interval_minutes: int = 30
     maxmind_db_path: str = ""
     rate_limit_per_minute: int = 120
