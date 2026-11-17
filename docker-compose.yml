@@ -1,3 +1,4 @@
+# Preserve the existing project name so upgrades reuse the populated database volume.
 name: ioc-platform
 services:
   db:

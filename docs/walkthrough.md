@@ -1,6 +1,8 @@
-# Browser walkthrough video
+# Tracefold browser walkthrough
 
 Created 2026-11-18. The finished local render is `artifacts/walkthrough/IOC-Feed-Walkthrough.mp4`: 1920×1080, H.264, 25 fps, 2:30, approximately 11.8 MB. It is silent and caption-led, with 21 baked-in text callouts, target outlines, a moving pointer, and a browser-window frame styled with the app's JetBrains Mono font and color tokens.
+
+That recording predates the Tracefold rename. New recordings use Tracefold branding and the renderer writes `Tracefold-Walkthrough.mp4` and `Tracefold-Walkthrough.srt`.
 
 The real browser interactions cover Atlas/year files/day heatmaps, facets and collections, search, IOC records/source evidence, the dense relationship graph and node/path interaction, Replay's capture timeline/origin grouping/graph changes, a second connected investigation, bulk triage and a real CSV download, map/time/family controls, and feed history. Demo IOCs, simulated replay stages, and synthetic geography are identified on screen. No production UI or stored IOC data is changed by the recorder.
 

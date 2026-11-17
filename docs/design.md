@@ -1,6 +1,6 @@
 # Frontend design system
 
-IOC Feed is an internal engineering utility. Its visual language is dense, quiet, text-first, and deliberately closer to a terminal or database client than a product website.
+Tracefold is an internal engineering utility. Its visual language is dense, quiet, text-first, and deliberately closer to a terminal or database client than a product website.
 
 ## Tokens
 

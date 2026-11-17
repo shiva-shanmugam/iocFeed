@@ -1,4 +1,4 @@
-# IOC//FEED
+# Tracefold
 
 A local-first IOC lookup and threat-intelligence console. It stores up to 1,310,000 URLs, IPv4 addresses, domains, and hashes in PostgreSQL, exposes a FastAPI API, and presents investigations in a dark React SOC interface. No third-party threat service is queried during a lookup.
 

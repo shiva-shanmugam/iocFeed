@@ -50,7 +50,7 @@ for scene in scenes:
     cuts.append({'first':first_frame,'last':last_frame,'duration':(last_frame-first_frame+1)/25})
 
 chapter_file=ROOT/'production'/'chapters.ffmetadata'
-metadata=[';FFMETADATA1','title=IOC Feed — Guided walkthrough','comment=Real local browser recording. The dataset is synthetic and Replay simulations are labeled.']
+metadata=[';FFMETADATA1','title=Tracefold — Guided walkthrough','comment=Real local browser recording. The dataset is synthetic and Replay simulations are labeled.']
 chapters=[]
 elapsed=0
 for index,scene in enumerate(scenes):
@@ -59,7 +59,7 @@ for index,scene in enumerate(scenes):
     metadata.extend(['[CHAPTER]','TIMEBASE=1/1000',f'START={round(elapsed*1000)}',f'END={round((elapsed+duration)*1000)}',f'title={scene["title"]}'])
     elapsed+=duration
 chapter_file.write_text('\n'.join(metadata)+'\n')
-video=ROOT/'IOC-Feed-Walkthrough.mp4'
+video=ROOT/'Tracefold-Walkthrough.mp4'
 selection='+'.join(f"between(n,{cut['first']},{cut['last']})" for cut in cuts)
 filtergraph=f"fps=25,select='{selection}',setpts=N/(25*TB),format=yuv420p,fade=t=in:d=0.12,fade=t=out:st={elapsed-.12:.3f}:d=0.12"
 print(f'Encoding {elapsed:.2f}s as one continuous H.264 stream.',flush=True)
@@ -81,7 +81,7 @@ for number,note in enumerate(edit['callouts'],1):
     start=chapter['start']+max(0,note['start']-offset-cuts[scene_index]['first']/25)
     end=min(chapter['end'],chapter['start']+note['end']-offset-cuts[scene_index]['first']/25)
     captions.append(f'{number}\n{timestamp(start)} --> {timestamp(end)}\n{note["title"]}\n{note["text"]}\n')
-(ROOT/'IOC-Feed-Walkthrough.srt').write_text('\n'.join(captions))
+(ROOT/'Tracefold-Walkthrough.srt').write_text('\n'.join(captions))
 (ROOT/'chapters.json').write_text(json.dumps(chapters,indent=2)+'\n')
 
 run(['ffmpeg','-hide_banner','-loglevel','error','-y','-ss','2','-i',str(video),'-frames:v','1',str(ROOT/'poster.jpg')])
@@ -111,11 +111,11 @@ assert 100<float(info['format']['duration'])<240
 run(['ffmpeg','-hide_banner','-v','error','-i',str(video),'-f','null','-'])
 report={'file':str(video),'duration_seconds':float(info['format']['duration']),'width':stream['width'],'height':stream['height'],'codec':stream['codec_name'],'pixel_format':stream['pix_fmt'],'fps':stream['avg_frame_rate'],'bytes':int(info['format']['size']),'chapters':chapters,'callouts':len(edit['callouts']),'full_decode':'passed','source_frame_checks':frame_checks,'audio':'silent / caption-led','source':'real browser interaction recording'}
 (ROOT/'video-report.json').write_text(json.dumps(report,indent=2)+'\n')
-lines=['# IOC Feed walkthrough','',f'1080p MP4 · {short_time(report["duration_seconds"])} · {len(edit["callouts"])} baked-in callouts · silent / caption-led','',
+lines=['# Tracefold walkthrough','',f'1080p MP4 · {short_time(report["duration_seconds"])} · {len(edit["callouts"])} baked-in callouts · silent / caption-led','',
        'Recorded from the actual local app with a browser-window frame, moving pointer, app-themed callouts, focus outlines and lightweight chapter transitions. Loading gaps between chapters are removed. The app source and dataset are unchanged by the recording.','',
        'The demonstration uses 1,310,000 synthetic IOCs. Replay simulations and synthetic geography are identified on screen. The graph and Replay examples include 172.20.165.27, 172.20.169.11, and 172.20.172.249; each has 200 direct stored relationships.','',
        '## Chapters','']
 for chapter in chapters:lines.append(f'- **{short_time(chapter["start"])}** {chapter["title"]}')
-lines += ['', '## Files','', '- `IOC-Feed-Walkthrough.mp4`: finished shareable video, including chapter metadata.', '- `IOC-Feed-Walkthrough.srt`: optional accessible transcript/caption timing. Text callouts are already baked into the MP4.', '- `poster.jpg`: preview still.', '- `edit.json`: original scene and callout timing.', '- `video-report.json`: encoding and full-decode validation.', '- `production/render.py`: repeatable cuts, fades, chapters, encoding, and validation.', '- `frontend/scripts/record-walkthrough.mjs` in the repository records the actual interactions. Run from the frontend directory; `--dry` rehearses the tour and saves preview frames.', '', 'No ingestion worker is started by this walkthrough.']
+lines += ['', '## Files','', '- `Tracefold-Walkthrough.mp4`: finished shareable video, including chapter metadata.', '- `Tracefold-Walkthrough.srt`: optional accessible transcript/caption timing. Text callouts are already baked into the MP4.', '- `poster.jpg`: preview still.', '- `edit.json`: original scene and callout timing.', '- `video-report.json`: encoding and full-decode validation.', '- `production/render.py`: repeatable cuts, fades, chapters, encoding, and validation.', '- `frontend/scripts/record-walkthrough.mjs` in the repository records the actual interactions. Run from the frontend directory; `--dry` rehearses the tour and saves preview frames.', '', 'No ingestion worker is started by this walkthrough.']
 (ROOT/'README.md').write_text('\n'.join(lines)+'\n')
 print(json.dumps(report,indent=2),flush=True)

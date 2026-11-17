@@ -7,7 +7,7 @@ from app.core.config import settings
 from app.core.rate_limit import rate_limit
 
 app = FastAPI(
-    title="IOC Feed",
+    title="Tracefold",
     version="1.0.0",
     description="Local-first IOC lookup and threat-intelligence API",
 )

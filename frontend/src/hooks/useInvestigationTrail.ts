@@ -7,6 +7,7 @@ export type TrailItem = {
   path: string;
 };
 
+// Retain the existing keys so the Tracefold rename preserves saved investigation trails.
 const STORAGE_KEY = 'iocfeed:investigation-trail';
 const EVENT = 'iocfeed:trail-change';
 
