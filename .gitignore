@@ -10,3 +10,6 @@ dist/
 coverage/
 .DS_Store
 
+
+# Generated walkthrough recordings, renders, and review frames
+/artifacts/walkthrough/
